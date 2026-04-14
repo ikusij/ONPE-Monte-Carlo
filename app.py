@@ -68,8 +68,8 @@ def make_synthetic_result(province_agg: SimulationResult, total_votes: int) -> S
     )
 
 
-st.set_page_config(page_title="ONPE Win Probability", layout="wide")
-st.title("ONPE — Election Win Probability")
+st.set_page_config(page_title="ONPE Probabilidad de Victoria", layout="wide")
+st.title("ONPE — Probabilidad de Victoria Electoral")
 
 with open("nombre_ubigeo.json", "r", encoding="utf-8") as f:
     nombre_ubigeo: dict[str, list] = json.load(f)
@@ -83,17 +83,17 @@ for dept in _output:
         for dist in prov.get("distritos", []):
             ubigeo_names[str(dist["ubigeo"])] = dist["nombre"]
 
-zone = st.selectbox("Select zone (nombre_ubigeo)", sorted(nombre_ubigeo.keys()))
+zone = st.selectbox("Seleccionar zona", sorted(nombre_ubigeo.keys()))
 
-n_simulations    = st.sidebar.number_input("Simulations", min_value=1_000, max_value=100_000, value=10_000, step=1_000)
-confidence_level = st.sidebar.slider("Confidence level", 0.80, 0.99, 0.95, step=0.01)
+n_simulations    = st.sidebar.number_input("Simulaciones", min_value=1_000, max_value=100_000, value=10_000, step=1_000)
+confidence_level = st.sidebar.slider("Nivel de confianza", 0.80, 0.99, 0.95, step=0.01)
 prior_option     = st.sidebar.selectbox("Prior", ["flat", "jeffreys"])
-votes_per_acta   = st.sidebar.number_input("Votes per acta", min_value=1, max_value=1_000, value=250, step=1)
+votes_per_acta   = st.sidebar.number_input("Votos por acta", min_value=1, max_value=1_000, value=250, step=1)
 
-if st.button("Run simulation"):
+if st.button("Ejecutar simulación"):
     ids = nombre_ubigeo.get(zone, [])
     if not ids:
-        st.error("No ubigeo IDs found for this zone.")
+        st.error("No se encontraron ubigeos para esta zona.")
         st.stop()
 
     data = []
@@ -105,16 +105,16 @@ if st.button("Run simulation"):
         else:
             fetch_failures.append({
                 "Ubigeo":   str(ubigeo),
-                "District": ubigeo_names.get(str(ubigeo), "—"),
-                "Error":    "Not found in bundle",
+                "Distrito": ubigeo_names.get(str(ubigeo), "—"),
+                "Error":    "No encontrado en el bundle",
             })
 
     if not data:
-        st.error("No data found in bundle for this zone.")
+        st.error("No se encontraron datos en el bundle para esta zona.")
         st.stop()
 
-    # ── Step 1: simulate valid districts ────────────────────────────────────
-    with st.spinner("Running Monte Carlo simulation…"):
+    # ── Paso 1: simular distritos válidos ────────────────────────────────────
+    with st.spinner("Ejecutando simulación Monte Carlo…"):
         results = [
             monte_carlo_simulation(
                 d,
@@ -128,7 +128,7 @@ if st.button("Run simulation"):
             for i, d in enumerate(data)
         ]
 
-    # ── Step 2: province aggregates from valid districts ────────────────────
+    # ── Paso 2: agregados provinciales de distritos válidos ──────────────────
     province_valid: dict[str, list[SimulationResult]] = {}
     for d, r in zip(data, results):
         if r is not None:
@@ -151,17 +151,17 @@ if st.button("Run simulation"):
         for dc, rs in department_valid.items()
     }
 
-    # ── Step 3: synthesise skipped districts using province distribution ────
+    # ── Paso 3: sintetizar distritos omitidos con distribución provincial ────
     estimated, truly_skipped = [], []
     synthetic_results = []
 
     def _skip_reason(d):
         if d["votosEmitidos"] == 0:
-            return "No votes counted"
+            return "Sin votos contabilizados"
         cand_sum = sum(v for k, v in d["candidatos"].items() if k != "VOTOS EN BLANCO")
         if abs(cand_sum - d["votosEmitidos"]) > d["votosEmitidos"] * 0.05:
-            return f"Inconsistent data (candidates: {cand_sum:,} vs emitidos: {d['votosEmitidos']:,})"
-        return "Unknown"
+            return f"Datos inconsistentes (candidatos: {cand_sum:,} vs emitidos: {d['votosEmitidos']:,})"
+        return "Desconocido"
 
     for d, r in zip(data, results):
         if r is not None:
@@ -172,16 +172,16 @@ if st.button("Run simulation"):
         prov_agg = province_aggregates.get(pc)
         dept_agg = department_aggregates.get(dc)
         fallback_agg = prov_agg or dept_agg
-        fallback_label = "province" if prov_agg else ("department" if dept_agg else None)
+        fallback_label = "provincia" if prov_agg else ("departamento" if dept_agg else None)
         total_votes = d.get("pendientesJee", 0) * int(votes_per_acta)
         synthetic = make_synthetic_result(fallback_agg, total_votes)
 
         row = {
-            "Ubigeo":        ubigeo_str,
-            "District":      ubigeo_names.get(ubigeo_str, "—"),
-            "Reason":        _skip_reason(d),
-            "Distribution":  fallback_label or "—",
-            "Est. votes (actas)": total_votes,
+            "Ubigeo":              ubigeo_str,
+            "Distrito":            ubigeo_names.get(ubigeo_str, "—"),
+            "Motivo":              _skip_reason(d),
+            "Distribución usada":  fallback_label or "—",
+            "Votos est. (actas)":  total_votes,
         }
 
         if synthetic is not None:
@@ -190,80 +190,80 @@ if st.button("Run simulation"):
         else:
             truly_skipped.append(row)
 
-    # ── Step 4: final aggregation ────────────────────────────────────────────
+    # ── Paso 4: agregación final ─────────────────────────────────────────────
     all_results = [r for r in results if r is not None] + synthetic_results
 
     if not all_results:
-        st.error("No usable data for this zone — all districts were skipped and no province-level distribution could be inferred.")
+        st.error("Sin datos utilizables para esta zona — todos los distritos fueron omitidos y no se pudo inferir una distribución provincial.")
         st.stop()
 
     result = aggregate_province(all_results)
 
     ci_pct = int(result.confidence_level * 100)
 
-    st.subheader(f"Results — {zone}")
+    st.subheader(f"Resultados — {zone}")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Votes counted",   f"{result.votes_counted:,}")
-    col2.metric("Votes remaining", f"{result.votes_remaining:,}")
-    col3.metric("Total votes",     f"{result.total_votes:,}")
-    col4.metric("% counted",       f"{result.pct_counted:.1%}")
+    col1.metric("Votos contabilizados", f"{result.votes_counted:,}")
+    col2.metric("Votos restantes",      f"{result.votes_remaining:,}")
+    col3.metric("Total de votos",       f"{result.total_votes:,}")
+    col4.metric("% contabilizado",      f"{result.pct_counted:.1%}")
 
     rows = []
     for c in result.candidates:
         proj_votes = int(c.projected_share * result.total_votes)
         additional = proj_votes - c.votes_counted
         rows.append({
-            "Candidate":             c.name,
-            "Votes counted":         c.votes_counted,
-            "Current share":         c.current_share,
-            "Projected share":       c.projected_share,
-            f"CI low ({ci_pct}%)":   c.ci_low,
-            f"CI high ({ci_pct}%)":  c.ci_high,
-            "Win probability":       c.win_probability,
-            "Projected votes":       proj_votes,
-            "Additional votes":      additional,
+            "Candidato":                  c.name,
+            "Votos contabilizados":       c.votes_counted,
+            "Porcentaje actual":          c.current_share,
+            "Porcentaje proyectado":      c.projected_share,
+            f"IC inferior ({ci_pct}%)":   c.ci_low,
+            f"IC superior ({ci_pct}%)":   c.ci_high,
+            "Prob. de victoria":          c.win_probability,
+            "Votos proyectados":          proj_votes,
+            "Votos adicionales":          additional,
         })
 
     df = pd.DataFrame(rows)
-    pct_cols = ["Current share", "Projected share", f"CI low ({ci_pct}%)", f"CI high ({ci_pct}%)", "Win probability"]
-    int_cols = ["Votes counted", "Projected votes", "Additional votes"]
+    pct_cols = ["Porcentaje actual", "Porcentaje proyectado", f"IC inferior ({ci_pct}%)", f"IC superior ({ci_pct}%)", "Prob. de victoria"]
+    int_cols = ["Votos contabilizados", "Votos proyectados", "Votos adicionales"]
 
     st.dataframe(
         df.style
             .format({col: "{:.2%}" for col in pct_cols})
             .format({col: "{:,}"   for col in int_cols})
-            .highlight_max(subset=["Win probability"],  color="#d4edda")
-            .highlight_max(subset=["Projected share"],  color="#cce5ff"),
+            .highlight_max(subset=["Prob. de victoria"],     color="#d4edda")
+            .highlight_max(subset=["Porcentaje proyectado"], color="#cce5ff"),
         use_container_width=True,
         hide_index=True,
     )
 
     winner = result.projected_winner
     st.success(
-        f"**Projected winner:** {winner.name} — "
-        f"win probability {winner.win_probability:.1%}, "
-        f"projected share {winner.projected_share:.2%}"
+        f"**Ganador proyectado:** {winner.name} — "
+        f"probabilidad de victoria {winner.win_probability:.1%}, "
+        f"porcentaje proyectado {winner.projected_share:.2%}"
     )
 
     if estimated:
-        with st.expander(f"Districts estimated via provincial distribution ({len(estimated)})"):
+        with st.expander(f"Distritos estimados con distribución provincial ({len(estimated)})"):
             st.write(
-                "These districts had no votes counted. "
-                "Their vote totals were estimated from `votasRestantesEstimadoConActas` "
-                "and their distribution was inferred from the other valid districts in the same province."
+                "Estos distritos no tenían votos contabilizados. "
+                "Sus totales de votos fueron estimados con `votasRestantesEstimadoConActas` "
+                "y su distribución fue inferida de los distritos válidos de la misma provincia o departamento."
             )
             st.dataframe(pd.DataFrame(estimated), use_container_width=True, hide_index=True)
 
     if truly_skipped:
-        with st.expander(f"Districts excluded entirely ({len(truly_skipped)} — no province data available)"):
+        with st.expander(f"Distritos excluidos completamente ({len(truly_skipped)} — sin datos provinciales disponibles)"):
             st.write(
-                "These districts had no valid data and no province-level aggregate to draw from, "
-                "so they were excluded from the simulation entirely."
+                "Estos distritos no tenían datos válidos ni agregado provincial del cual inferir, "
+                "por lo que fueron excluidos de la simulación."
             )
             st.dataframe(pd.DataFrame(truly_skipped), use_container_width=True, hide_index=True)
 
     if fetch_failures:
-        with st.expander(f"Districts that could not be fetched ({len(fetch_failures)})"):
-            st.write("These districts returned an error from the API and were excluded entirely.")
+        with st.expander(f"Distritos no encontrados en el bundle ({len(fetch_failures)})"):
+            st.write("Estos distritos no fueron encontrados en el bundle de datos y fueron excluidos.")
             st.dataframe(pd.DataFrame(fetch_failures), use_container_width=True, hide_index=True)
