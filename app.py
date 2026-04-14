@@ -78,23 +78,76 @@ with open("output.json", "r", encoding="utf-8") as f:
     _output = json.load(f)
 
 ubigeo_names: dict[str, str] = {}
+# Hierarchy: department → province → [(district_name, ubigeo_code)]
+# Uses ubigeo codes from output.json directly — avoids name collisions in nombre_ubigeo.json
+hierarchy: dict[str, dict[str, list[tuple[str, str]]]] = {}
 for dept in _output:
+    dept_name = dept["nombre"]
+    hierarchy[dept_name] = {}
     for prov in dept.get("provincias", []):
+        prov_name = prov["nombre"]
+        pairs = [
+            (d["nombre"], str(d["ubigeo"]))
+            for d in prov.get("distritos", [])
+            if str(d["ubigeo"]) in bundle
+        ]
+        if pairs:
+            hierarchy[dept_name][prov_name] = sorted(pairs, key=lambda x: x[0])
         for dist in prov.get("distritos", []):
             ubigeo_names[str(dist["ubigeo"])] = dist["nombre"]
 
-zone = st.selectbox("Seleccionar zona", sorted(nombre_ubigeo.keys()))
+TODOS = "— Todos —"
+
+col_dep, col_prov, col_dist = st.columns(3)
+
+with col_dep:
+    dept_sel = st.selectbox("Departamento", [TODOS] + sorted(hierarchy.keys()))
+
+with col_prov:
+    if dept_sel == TODOS:
+        st.selectbox("Provincia", [TODOS], disabled=True)
+        prov_sel = TODOS
+    else:
+        provs = [TODOS] + sorted(hierarchy.get(dept_sel, {}).keys())
+        prov_sel = st.selectbox("Provincia", provs)
+
+with col_dist:
+    if prov_sel == TODOS:
+        st.selectbox("Distrito", [TODOS], disabled=True)
+        dist_sel = TODOS
+        dist_ubigeo = None
+    else:
+        pairs = hierarchy.get(dept_sel, {}).get(prov_sel, [])
+        dist_options = [TODOS] + [name for name, _ in pairs]
+        dist_sel = st.selectbox("Distrito", dist_options)
+        dist_ubigeo = next((uid for name, uid in pairs if name == dist_sel), None)
 
 n_simulations    = st.sidebar.number_input("Simulaciones", min_value=500, max_value=5000, value=1000, step=100)
 confidence_level = st.sidebar.slider("Nivel de confianza", 0.80, 0.99, 0.95, step=0.01)
 prior_option     = st.sidebar.selectbox("Prior", ["flat", "jeffreys"])
-votes_per_acta   = st.sidebar.number_input("Votos por acta", min_value=100, max_value=300, value=160, step=1)
+votes_per_acta   = st.sidebar.number_input("Votos por acta", min_value=0, max_value=300, value=0, step=1)
 
 if st.button("Ejecutar simulación"):
-    ids = nombre_ubigeo.get(zone, [])
+    # Collect ubigeo IDs based on selection level — all from output.json directly
+    if dist_sel != TODOS and dist_ubigeo:
+        ids = [dist_ubigeo]
+    elif prov_sel != TODOS:
+        ids = [uid for _, uid in hierarchy.get(dept_sel, {}).get(prov_sel, [])]
+    elif dept_sel != TODOS:
+        ids = [uid for pairs in hierarchy.get(dept_sel, {}).values() for _, uid in pairs]
+    else:
+        ids = [uid for dept_provs in hierarchy.values() for pairs in dept_provs.values() for _, uid in pairs]
+
     if not ids:
-        st.error("No se encontraron ubigeos para esta zona.")
+        st.error("No se encontraron ubigeos para esta selección.")
         st.stop()
+
+    zone_label = (
+        dist_sel if dist_sel != TODOS else
+        prov_sel if prov_sel != TODOS else
+        dept_sel if dept_sel != TODOS else
+        "Nacional"
+    )
 
     data = []
     fetch_failures = []
@@ -201,7 +254,7 @@ if st.button("Ejecutar simulación"):
 
     ci_pct = int(result.confidence_level * 100)
 
-    st.subheader(f"Resultados — {zone}")
+    st.subheader(f"Resultados — {zone_label}")
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Votos contabilizados", f"{result.votes_counted:,}")
