@@ -200,7 +200,7 @@ def aggregate_province(district_results: list[SimulationResult]) -> SimulationRe
         CandidateResult(
             name=all_names[i],
             votes_counted=name_to_votes[all_names[i]],
-            current_share=name_to_votes[all_names[i]] / votes_counted,
+            current_share=name_to_votes[all_names[i]] / votes_counted if votes_counted else 0.0,
             projected_share=float(means[i]),
             ci_low=float(ci_lo[i]),
             ci_high=float(ci_hi[i]),
