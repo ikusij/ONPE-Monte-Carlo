@@ -50,7 +50,7 @@ def load_totales(ubigeo_distrito: int | str) -> dict:
     return {k: v for k, v in data.items() if k not in TOTALES_DROP_KEYS}
 
 
-def format_data(ubigeo_distrito: int | str, votes_per_acta: int = 250) -> dict:
+def format_data(ubigeo_distrito: int | str) -> dict:
     totales     = load_totales(ubigeo_distrito)
     candidatos  = load_participantes(ubigeo_distrito)
 
@@ -67,7 +67,7 @@ def format_data(ubigeo_distrito: int | str, votes_per_acta: int = 250) -> dict:
 
     return {
         "ubigeo_distrito": ubigeo_distrito,
-        "votasRestantesEstimadoConActas": totales["pendientesJee"] * votes_per_acta,
+        "pendientesJee":  totales.get("pendientesJee", 0),
         "votosEmitidos":  votos_emitidos,
         "votosRestantes": votos_restantes,
         "candidatos":     candidatos,

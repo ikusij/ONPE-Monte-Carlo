@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from fetch import format_data as _format_data
 from monte_carlo import (
     MonteCarloConfig,
     CandidateResult,
@@ -12,9 +11,8 @@ from monte_carlo import (
     aggregate_province,
 )
 
-@st.cache_data(ttl=1800, show_spinner=False)
-def format_data(ubigeo, votes_per_acta: int = 250):
-    return _format_data(ubigeo, votes_per_acta)
+with open("bundle.json", "r", encoding="utf-8") as f:
+    bundle: dict = json.load(f)
 
 
 def province_code(ubigeo: str) -> str:
@@ -98,23 +96,21 @@ if st.button("Run simulation"):
         st.error("No ubigeo IDs found for this zone.")
         st.stop()
 
-    progress = st.progress(0, text="Fetching data…")
     data = []
     fetch_failures = []
-    for i, ubigeo in enumerate(ids):
-        try:
-            data.append(format_data(ubigeo, int(votes_per_acta)))
-        except Exception as e:
+    for ubigeo in ids:
+        row = bundle.get(str(ubigeo))
+        if row is not None:
+            data.append(row)
+        else:
             fetch_failures.append({
                 "Ubigeo":   str(ubigeo),
                 "District": ubigeo_names.get(str(ubigeo), "—"),
-                "Error":    str(e),
+                "Error":    "Not found in bundle",
             })
-        progress.progress((i + 1) / len(ids), text=f"Fetching data… {i+1}/{len(ids)}")
-    progress.empty()
 
     if not data:
-        st.error("No data could be fetched.")
+        st.error("No data found in bundle for this zone.")
         st.stop()
 
     # ── Step 1: simulate valid districts ────────────────────────────────────
@@ -177,7 +173,7 @@ if st.button("Run simulation"):
         dept_agg = department_aggregates.get(dc)
         fallback_agg = prov_agg or dept_agg
         fallback_label = "province" if prov_agg else ("department" if dept_agg else None)
-        total_votes = d.get("votasRestantesEstimadoConActas", 0)
+        total_votes = d.get("pendientesJee", 0) * int(votes_per_acta)
         synthetic = make_synthetic_result(fallback_agg, total_votes)
 
         row = {
