@@ -258,7 +258,7 @@ if st.button("Ejecutar simulación"):
             confidence_level=confidence_level,
             prior=prior_option,
             votes_per_acta=int(votes_per_acta),
-            compute_breakdown=dist_sel == TODOS and int(n_simulations) < 1000,
+            compute_breakdown=dist_sel == TODOS and int(n_simulations) <= 1000,
         )
 
     if result is None:
@@ -315,7 +315,7 @@ if st.button("Ejecutar simulación"):
     )
 
     # ── Desglose geográfico ──────────────────────────────────────────────────
-    if dist_sel == TODOS and district_results and int(n_simulations) < 1000:
+    if dist_sel == TODOS and district_results and int(n_simulations) <= 1000:
         if prov_sel != TODOS:
             geo_label  = "Distrito"
             key_fn     = lambda uid: ubigeo_names.get(uid, uid)
