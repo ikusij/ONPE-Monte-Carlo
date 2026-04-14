@@ -20,7 +20,7 @@ def get_initial_list():
         # Correct looping over ambito geografico 1 and 2 (inclusive)
         for ambito_geografico in [1, 2]:
             try:
-                rsp = requests.get(DEPARTAMENTOS.format(ambito_geografico), headers=headers, timeout=10)
+                rsp = requests.get(DEPARTAMENTOS.format(ambito_geografico), headers=headers, timeout=1)
                 rsp.raise_for_status()
                 departamentos = rsp.json().get('data', [])
             except Exception as e:
@@ -41,7 +41,7 @@ def get_initial_list():
 
     def load_provincias(ambito_geografico, ubigeo_departamento):
         try:
-            rsp = requests.get(PROVINCIAS.format(ambito_geografico, ubigeo_departamento), headers=headers, timeout=10)
+            rsp = requests.get(PROVINCIAS.format(ambito_geografico, ubigeo_departamento), headers=headers, timeout=1)
             rsp.raise_for_status()
             provincias = rsp.json().get('data', [])
         except Exception as e:
@@ -60,7 +60,7 @@ def get_initial_list():
 
     def load_distritos(ambito_geografico, ubigeo_provincia):
         try:
-            rsp = requests.get(DISTRITO.format(ambito_geografico, ubigeo_provincia), headers=headers, timeout=10)
+            rsp = requests.get(DISTRITO.format(ambito_geografico, ubigeo_provincia), headers=headers, timeout=1)
             rsp.raise_for_status()
             distritos = rsp.json().get('data', [])
         except Exception as e:
