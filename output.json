@@ -8892,5 +8892,1337 @@
         ]
       }
     ]
+  },
+  {
+    "nombre": "ÁFRICA",
+    "ubigeo": "910000",
+    "provincias": [
+      {
+        "nombre": "ARGELIA",
+        "ubigeo": "910100",
+        "distritos": [
+          {
+            "nombre": "ARGEL",
+            "ubigeo": "910101"
+          }
+        ]
+      },
+      {
+        "nombre": "GHANA",
+        "ubigeo": "911200",
+        "distritos": [
+          {
+            "nombre": "ACRA",
+            "ubigeo": "911201"
+          }
+        ]
+      },
+      {
+        "nombre": "KENIA",
+        "ubigeo": "910400",
+        "distritos": [
+          {
+            "nombre": "NAIROBI",
+            "ubigeo": "910401"
+          }
+        ]
+      },
+      {
+        "nombre": "MARRUECOS",
+        "ubigeo": "910500",
+        "distritos": [
+          {
+            "nombre": "RABAT",
+            "ubigeo": "910502"
+          }
+        ]
+      },
+      {
+        "nombre": "REPÚBLICA ÁRABE DE EGIPTO",
+        "ubigeo": "910300",
+        "distritos": [
+          {
+            "nombre": "EL CAIRO",
+            "ubigeo": "910302"
+          }
+        ]
+      },
+      {
+        "nombre": "SUDÁFRICA",
+        "ubigeo": "910600",
+        "distritos": [
+          {
+            "nombre": "PRETORIA",
+            "ubigeo": "910603"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "nombre": "AMÉRICA",
+    "ubigeo": "920000",
+    "provincias": [
+      {
+        "nombre": "ANTILLAS HOLANDESAS",
+        "ubigeo": "920100",
+        "distritos": [
+          {
+            "nombre": "ARUBA",
+            "ubigeo": "920101"
+          }
+        ]
+      },
+      {
+        "nombre": "ARGENTINA",
+        "ubigeo": "920200",
+        "distritos": [
+          {
+            "nombre": "BUENOS AIRES",
+            "ubigeo": "920202"
+          },
+          {
+            "nombre": "CATAMARCA",
+            "ubigeo": "920224"
+          },
+          {
+            "nombre": "CÓRDOBA",
+            "ubigeo": "920203"
+          },
+          {
+            "nombre": "CORRIENTES",
+            "ubigeo": "920204"
+          },
+          {
+            "nombre": "LA PLATA",
+            "ubigeo": "920205"
+          },
+          {
+            "nombre": "LA RIOJA",
+            "ubigeo": "920226"
+          },
+          {
+            "nombre": "MENDOZA",
+            "ubigeo": "920206"
+          },
+          {
+            "nombre": "ROSARIO DE SANTA FE",
+            "ubigeo": "920207"
+          },
+          {
+            "nombre": "SALTA",
+            "ubigeo": "920208"
+          },
+          {
+            "nombre": "SAN JUAN",
+            "ubigeo": "920210"
+          },
+          {
+            "nombre": "SAN LUIS",
+            "ubigeo": "920219"
+          }
+        ]
+      },
+      {
+        "nombre": "BOLIVIA",
+        "ubigeo": "920400",
+        "distritos": [
+          {
+            "nombre": "COCHABAMBA",
+            "ubigeo": "920401"
+          },
+          {
+            "nombre": "LA PAZ",
+            "ubigeo": "920403"
+          },
+          {
+            "nombre": "SANTA CRUZ",
+            "ubigeo": "920405"
+          }
+        ]
+      },
+      {
+        "nombre": "BRASIL",
+        "ubigeo": "920500",
+        "distritos": [
+          {
+            "nombre": "BELO HORIZONTE",
+            "ubigeo": "920502"
+          },
+          {
+            "nombre": "BRASILIA",
+            "ubigeo": "920503"
+          },
+          {
+            "nombre": "CURITIBA",
+            "ubigeo": "920504"
+          },
+          {
+            "nombre": "FORTALEZA",
+            "ubigeo": "920536"
+          },
+          {
+            "nombre": "GOIANIA",
+            "ubigeo": "920532"
+          },
+          {
+            "nombre": "MANAOS",
+            "ubigeo": "920505"
+          },
+          {
+            "nombre": "PORTO ALEGRE",
+            "ubigeo": "920506"
+          },
+          {
+            "nombre": "RÍO BRANCO",
+            "ubigeo": "920508"
+          },
+          {
+            "nombre": "RÍO DE JANEIRO",
+            "ubigeo": "920509"
+          },
+          {
+            "nombre": "SALVADOR",
+            "ubigeo": "920511"
+          },
+          {
+            "nombre": "SAO PAULO",
+            "ubigeo": "920510"
+          }
+        ]
+      },
+      {
+        "nombre": "CANADÁ",
+        "ubigeo": "920600",
+        "distritos": [
+          {
+            "nombre": "ALBERTA",
+            "ubigeo": "920608"
+          },
+          {
+            "nombre": "MONTREAL",
+            "ubigeo": "920601"
+          },
+          {
+            "nombre": "OTTAWA",
+            "ubigeo": "920602"
+          },
+          {
+            "nombre": "TORONTO",
+            "ubigeo": "920603"
+          },
+          {
+            "nombre": "VANCOUVER",
+            "ubigeo": "920604"
+          },
+          {
+            "nombre": "WINNIPEG",
+            "ubigeo": "920605"
+          }
+        ]
+      },
+      {
+        "nombre": "CHILE",
+        "ubigeo": "921000",
+        "distritos": [
+          {
+            "nombre": "ANTOFAGASTA",
+            "ubigeo": "921001"
+          },
+          {
+            "nombre": "ARICA",
+            "ubigeo": "921002"
+          },
+          {
+            "nombre": "CONCEPCIÓN",
+            "ubigeo": "921003"
+          },
+          {
+            "nombre": "COPIAPÓ",
+            "ubigeo": "921026"
+          },
+          {
+            "nombre": "IQUIQUE",
+            "ubigeo": "921005"
+          },
+          {
+            "nombre": "SANTIAGO",
+            "ubigeo": "921006"
+          },
+          {
+            "nombre": "VALPARAISO",
+            "ubigeo": "921007"
+          }
+        ]
+      },
+      {
+        "nombre": "COLOMBIA",
+        "ubigeo": "920700",
+        "distritos": [
+          {
+            "nombre": "BARRANQUILLA",
+            "ubigeo": "920701"
+          },
+          {
+            "nombre": "BOGOTÁ",
+            "ubigeo": "920702"
+          },
+          {
+            "nombre": "BUCARAMANGA",
+            "ubigeo": "920709"
+          },
+          {
+            "nombre": "CALI",
+            "ubigeo": "920703"
+          },
+          {
+            "nombre": "CARTAGENA",
+            "ubigeo": "920737"
+          },
+          {
+            "nombre": "LETICIA",
+            "ubigeo": "920705"
+          },
+          {
+            "nombre": "MEDELLÍN",
+            "ubigeo": "920706"
+          },
+          {
+            "nombre": "PASTO",
+            "ubigeo": "920717"
+          }
+        ]
+      },
+      {
+        "nombre": "COSTA RICA",
+        "ubigeo": "920800",
+        "distritos": [
+          {
+            "nombre": "SAN JOSÉ",
+            "ubigeo": "920803"
+          }
+        ]
+      },
+      {
+        "nombre": "CUBA",
+        "ubigeo": "920900",
+        "distritos": [
+          {
+            "nombre": "LA HABANA",
+            "ubigeo": "920901"
+          }
+        ]
+      },
+      {
+        "nombre": "ECUADOR",
+        "ubigeo": "921100",
+        "distritos": [
+          {
+            "nombre": "AZUAY",
+            "ubigeo": "921110"
+          },
+          {
+            "nombre": "GUAYAQUIL",
+            "ubigeo": "921101"
+          },
+          {
+            "nombre": "LOJA",
+            "ubigeo": "921102"
+          },
+          {
+            "nombre": "MACHALA",
+            "ubigeo": "921104"
+          },
+          {
+            "nombre": "QUITO",
+            "ubigeo": "921105"
+          }
+        ]
+      },
+      {
+        "nombre": "EL SALVADOR",
+        "ubigeo": "921200",
+        "distritos": [
+          {
+            "nombre": "SAN SALVADOR",
+            "ubigeo": "921201"
+          }
+        ]
+      },
+      {
+        "nombre": "ESTADOS UNIDOS DE ÁMERICA",
+        "ubigeo": "921300",
+        "distritos": [
+          {
+            "nombre": "ATLANTA",
+            "ubigeo": "921381"
+          },
+          {
+            "nombre": "BOSTON",
+            "ubigeo": "921303"
+          },
+          {
+            "nombre": "CAROLINA DEL NORTE",
+            "ubigeo": "921350"
+          },
+          {
+            "nombre": "CHICAGO",
+            "ubigeo": "921304"
+          },
+          {
+            "nombre": "DALLAS",
+            "ubigeo": "921373"
+          },
+          {
+            "nombre": "DENVER",
+            "ubigeo": "921308"
+          },
+          {
+            "nombre": "HARTFORD",
+            "ubigeo": "921385"
+          },
+          {
+            "nombre": "HOUSTON",
+            "ubigeo": "921313"
+          },
+          {
+            "nombre": "LOS ÁNGELES",
+            "ubigeo": "921315"
+          },
+          {
+            "nombre": "MIAMI",
+            "ubigeo": "921317"
+          },
+          {
+            "nombre": "NUEVA JERSEY",
+            "ubigeo": "921335"
+          },
+          {
+            "nombre": "NUEVA ORLEANS",
+            "ubigeo": "921318"
+          },
+          {
+            "nombre": "NUEVA YORK",
+            "ubigeo": "921319"
+          },
+          {
+            "nombre": "OKLAHOMA",
+            "ubigeo": "921322"
+          },
+          {
+            "nombre": "ORLANDO",
+            "ubigeo": "921320"
+          },
+          {
+            "nombre": "PHOENIX",
+            "ubigeo": "921372"
+          },
+          {
+            "nombre": "SALT LAKE CITY",
+            "ubigeo": "921374"
+          },
+          {
+            "nombre": "SAN ANTONIO",
+            "ubigeo": "921323"
+          },
+          {
+            "nombre": "SAN DIEGO",
+            "ubigeo": "921324"
+          },
+          {
+            "nombre": "SAN FRANCISCO",
+            "ubigeo": "921325"
+          },
+          {
+            "nombre": "SEATTLE",
+            "ubigeo": "921328"
+          },
+          {
+            "nombre": "WASHINGTON D. C.",
+            "ubigeo": "921331"
+          }
+        ]
+      },
+      {
+        "nombre": "GUATEMALA",
+        "ubigeo": "921500",
+        "distritos": [
+          {
+            "nombre": "GUATEMALA",
+            "ubigeo": "921501"
+          }
+        ]
+      },
+      {
+        "nombre": "GUAYANA FRANCESA",
+        "ubigeo": "923000",
+        "distritos": [
+          {
+            "nombre": "CAYENA",
+            "ubigeo": "923001"
+          }
+        ]
+      },
+      {
+        "nombre": "HONDURAS",
+        "ubigeo": "921700",
+        "distritos": [
+          {
+            "nombre": "TEGUCIGALPA",
+            "ubigeo": "921701"
+          }
+        ]
+      },
+      {
+        "nombre": "MÉXICO",
+        "ubigeo": "921900",
+        "distritos": [
+          {
+            "nombre": "CIUDAD DE MÉXICO",
+            "ubigeo": "921902"
+          },
+          {
+            "nombre": "GUADALAJARA",
+            "ubigeo": "921901"
+          },
+          {
+            "nombre": "MONTERREY",
+            "ubigeo": "921903"
+          }
+        ]
+      },
+      {
+        "nombre": "NICARAGUA",
+        "ubigeo": "922000",
+        "distritos": [
+          {
+            "nombre": "MANAGUA",
+            "ubigeo": "922001"
+          }
+        ]
+      },
+      {
+        "nombre": "PANAMÁ",
+        "ubigeo": "922100",
+        "distritos": [
+          {
+            "nombre": "COLON",
+            "ubigeo": "922103"
+          },
+          {
+            "nombre": "DAVID",
+            "ubigeo": "922102"
+          },
+          {
+            "nombre": "PANAMÁ",
+            "ubigeo": "922101"
+          },
+          {
+            "nombre": "VERAGUAS",
+            "ubigeo": "922108"
+          }
+        ]
+      },
+      {
+        "nombre": "PARAGUAY",
+        "ubigeo": "922200",
+        "distritos": [
+          {
+            "nombre": "ASUNCIÓN",
+            "ubigeo": "922201"
+          }
+        ]
+      },
+      {
+        "nombre": "PUERTO RICO",
+        "ubigeo": "922300",
+        "distritos": [
+          {
+            "nombre": "SAN JUAN",
+            "ubigeo": "922303"
+          }
+        ]
+      },
+      {
+        "nombre": "REPÚBLICA DOMINICANA",
+        "ubigeo": "922400",
+        "distritos": [
+          {
+            "nombre": "SANTIAGO DE LOS CABALLEROS",
+            "ubigeo": "922403"
+          },
+          {
+            "nombre": "SANTO DOMINGO",
+            "ubigeo": "922401"
+          }
+        ]
+      },
+      {
+        "nombre": "TRINIDAD Y TOBAGO",
+        "ubigeo": "922600",
+        "distritos": [
+          {
+            "nombre": "PUERTO ESPAÑA",
+            "ubigeo": "922601"
+          }
+        ]
+      },
+      {
+        "nombre": "URUGUAY",
+        "ubigeo": "922700",
+        "distritos": [
+          {
+            "nombre": "MONTEVIDEO",
+            "ubigeo": "922701"
+          }
+        ]
+      },
+      {
+        "nombre": "VENEZUELA",
+        "ubigeo": "922800",
+        "distritos": [
+          {
+            "nombre": "CARACAS",
+            "ubigeo": "922802"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "nombre": "ASIA",
+    "ubigeo": "930000",
+    "provincias": [
+      {
+        "nombre": "ARABIA SAUDITA",
+        "ubigeo": "931900",
+        "distritos": [
+          {
+            "nombre": "RIAD",
+            "ubigeo": "931904"
+          }
+        ]
+      },
+      {
+        "nombre": "CATAR",
+        "ubigeo": "933800",
+        "distritos": [
+          {
+            "nombre": "DOHA",
+            "ubigeo": "933801"
+          }
+        ]
+      },
+      {
+        "nombre": "EMIRATOS ÁRABES UNIDOS",
+        "ubigeo": "933700",
+        "distritos": [
+          {
+            "nombre": "ABU DABI",
+            "ubigeo": "933702"
+          },
+          {
+            "nombre": "DUBÁI",
+            "ubigeo": "933701"
+          }
+        ]
+      },
+      {
+        "nombre": "FILIPINAS",
+        "ubigeo": "933200",
+        "distritos": [
+          {
+            "nombre": "MANILA",
+            "ubigeo": "933201"
+          }
+        ]
+      },
+      {
+        "nombre": "INDIA",
+        "ubigeo": "930400",
+        "distritos": [
+          {
+            "nombre": "NUEVA DELHI",
+            "ubigeo": "930402"
+          }
+        ]
+      },
+      {
+        "nombre": "INDONESIA",
+        "ubigeo": "931100",
+        "distritos": [
+          {
+            "nombre": "JAKARTA",
+            "ubigeo": "931101"
+          }
+        ]
+      },
+      {
+        "nombre": "IRÁN",
+        "ubigeo": "932400",
+        "distritos": [
+          {
+            "nombre": "TEHERAN",
+            "ubigeo": "932401"
+          }
+        ]
+      },
+      {
+        "nombre": "ISRAEL",
+        "ubigeo": "930600",
+        "distritos": [
+          {
+            "nombre": "RAMLA",
+            "ubigeo": "930603"
+          },
+          {
+            "nombre": "TEL AVIV",
+            "ubigeo": "930602"
+          }
+        ]
+      },
+      {
+        "nombre": "JAPÓN",
+        "ubigeo": "930700",
+        "distritos": [
+          {
+            "nombre": "FUKUOKA",
+            "ubigeo": "930705"
+          },
+          {
+            "nombre": "GUNMA",
+            "ubigeo": "930721"
+          },
+          {
+            "nombre": "HIROSHIMA",
+            "ubigeo": "930709"
+          },
+          {
+            "nombre": "KOBE",
+            "ubigeo": "930731"
+          },
+          {
+            "nombre": "MIE",
+            "ubigeo": "930727"
+          },
+          {
+            "nombre": "NAGOYA",
+            "ubigeo": "930713"
+          },
+          {
+            "nombre": "OKINAWA",
+            "ubigeo": "930704"
+          },
+          {
+            "nombre": "SAITAMA",
+            "ubigeo": "930720"
+          },
+          {
+            "nombre": "SHIGA",
+            "ubigeo": "930736"
+          },
+          {
+            "nombre": "SHIZUOKA",
+            "ubigeo": "930726"
+          },
+          {
+            "nombre": "TOKIO",
+            "ubigeo": "930703"
+          }
+        ]
+      },
+      {
+        "nombre": "JORDANIA",
+        "ubigeo": "931300",
+        "distritos": [
+          {
+            "nombre": "AMMAN",
+            "ubigeo": "931302"
+          }
+        ]
+      },
+      {
+        "nombre": "KUWAIT",
+        "ubigeo": "932800",
+        "distritos": [
+          {
+            "nombre": "AL - KUWAIT",
+            "ubigeo": "932801"
+          }
+        ]
+      },
+      {
+        "nombre": "LÍBANO",
+        "ubigeo": "930800",
+        "distritos": [
+          {
+            "nombre": "BEIRUT",
+            "ubigeo": "930801"
+          }
+        ]
+      },
+      {
+        "nombre": "MALASIA",
+        "ubigeo": "933000",
+        "distritos": [
+          {
+            "nombre": "KUALA LUMPUR",
+            "ubigeo": "933001"
+          }
+        ]
+      },
+      {
+        "nombre": "REPUBLICA DE COREA",
+        "ubigeo": "930100",
+        "distritos": [
+          {
+            "nombre": "SEÚL",
+            "ubigeo": "930101"
+          }
+        ]
+      },
+      {
+        "nombre": "REPÚBLICA POPULAR CHINA",
+        "ubigeo": "930200",
+        "distritos": [
+          {
+            "nombre": "BEIJING (PEKIN)",
+            "ubigeo": "930201"
+          },
+          {
+            "nombre": "GUANGZHOU",
+            "ubigeo": "930232"
+          },
+          {
+            "nombre": "REGION ADMINISTRATIVA ESPECIAL HONG KONG",
+            "ubigeo": "930226"
+          },
+          {
+            "nombre": "SHANGHÁI",
+            "ubigeo": "930206"
+          }
+        ]
+      },
+      {
+        "nombre": "SINGAPUR",
+        "ubigeo": "932500",
+        "distritos": [
+          {
+            "nombre": "SINGAPUR",
+            "ubigeo": "932501"
+          }
+        ]
+      },
+      {
+        "nombre": "TAILANDIA",
+        "ubigeo": "931000",
+        "distritos": [
+          {
+            "nombre": "BANGKOK",
+            "ubigeo": "931001"
+          }
+        ]
+      },
+      {
+        "nombre": "TURQUÍA",
+        "ubigeo": "931500",
+        "distritos": [
+          {
+            "nombre": "ANKARA",
+            "ubigeo": "931503"
+          },
+          {
+            "nombre": "ESTAMBUL",
+            "ubigeo": "931501"
+          }
+        ]
+      },
+      {
+        "nombre": "VIETNAM",
+        "ubigeo": "932000",
+        "distritos": [
+          {
+            "nombre": "HANÓI",
+            "ubigeo": "932002"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "nombre": "EUROPA",
+    "ubigeo": "940000",
+    "provincias": [
+      {
+        "nombre": "ALEMANIA",
+        "ubigeo": "940200",
+        "distritos": [
+          {
+            "nombre": "BERLÍN",
+            "ubigeo": "940201"
+          },
+          {
+            "nombre": "BREMEN",
+            "ubigeo": "940203"
+          },
+          {
+            "nombre": "COLONIA",
+            "ubigeo": "940213"
+          },
+          {
+            "nombre": "FRANKFURT",
+            "ubigeo": "940205"
+          },
+          {
+            "nombre": "HAMBURGO",
+            "ubigeo": "940206"
+          },
+          {
+            "nombre": "MÚNICH",
+            "ubigeo": "940245"
+          }
+        ]
+      },
+      {
+        "nombre": "AUSTRIA",
+        "ubigeo": "940300",
+        "distritos": [
+          {
+            "nombre": "VIENA",
+            "ubigeo": "940302"
+          }
+        ]
+      },
+      {
+        "nombre": "BÉLGICA",
+        "ubigeo": "940400",
+        "distritos": [
+          {
+            "nombre": "AMBERES",
+            "ubigeo": "940401"
+          },
+          {
+            "nombre": "BRUSELAS",
+            "ubigeo": "940402"
+          },
+          {
+            "nombre": "GANTE",
+            "ubigeo": "940403"
+          },
+          {
+            "nombre": "LIEJA",
+            "ubigeo": "940404"
+          }
+        ]
+      },
+      {
+        "nombre": "BIELORRUSIA",
+        "ubigeo": "943600",
+        "distritos": [
+          {
+            "nombre": "MINSK",
+            "ubigeo": "943601"
+          }
+        ]
+      },
+      {
+        "nombre": "DINAMARCA",
+        "ubigeo": "940800",
+        "distritos": [
+          {
+            "nombre": "COPENHAGUE",
+            "ubigeo": "940801"
+          }
+        ]
+      },
+      {
+        "nombre": "ESPAÑA",
+        "ubigeo": "940900",
+        "distritos": [
+          {
+            "nombre": "ALMERÍA",
+            "ubigeo": "940935"
+          },
+          {
+            "nombre": "BARCELONA",
+            "ubigeo": "940902"
+          },
+          {
+            "nombre": "BILBAO",
+            "ubigeo": "940903"
+          },
+          {
+            "nombre": "LAS PALMAS",
+            "ubigeo": "940909"
+          },
+          {
+            "nombre": "MADRID",
+            "ubigeo": "940910"
+          },
+          {
+            "nombre": "MÁLAGA",
+            "ubigeo": "940911"
+          },
+          {
+            "nombre": "MALLORCA",
+            "ubigeo": "940913"
+          },
+          {
+            "nombre": "OVIEDO",
+            "ubigeo": "940931"
+          },
+          {
+            "nombre": "SALAMANCA",
+            "ubigeo": "940905"
+          },
+          {
+            "nombre": "SEVILLA",
+            "ubigeo": "940918"
+          },
+          {
+            "nombre": "TENERIFE",
+            "ubigeo": "940915"
+          },
+          {
+            "nombre": "VALENCIA",
+            "ubigeo": "940920"
+          },
+          {
+            "nombre": "VIGO",
+            "ubigeo": "940922"
+          },
+          {
+            "nombre": "ZARAGOZA",
+            "ubigeo": "940917"
+          }
+        ]
+      },
+      {
+        "nombre": "FINLANDIA",
+        "ubigeo": "941000",
+        "distritos": [
+          {
+            "nombre": "HELSINKI",
+            "ubigeo": "941001"
+          }
+        ]
+      },
+      {
+        "nombre": "FRANCIA",
+        "ubigeo": "941100",
+        "distritos": [
+          {
+            "nombre": "BURDEOS",
+            "ubigeo": "941101"
+          },
+          {
+            "nombre": "ESTRASBURGO",
+            "ubigeo": "941103"
+          },
+          {
+            "nombre": "LYON",
+            "ubigeo": "941105"
+          },
+          {
+            "nombre": "MARSELLA",
+            "ubigeo": "941106"
+          },
+          {
+            "nombre": "NIZA",
+            "ubigeo": "941107"
+          },
+          {
+            "nombre": "PARÍS",
+            "ubigeo": "941108"
+          },
+          {
+            "nombre": "TOULOUSE",
+            "ubigeo": "941110"
+          }
+        ]
+      },
+      {
+        "nombre": "GRAN BRETAÑA",
+        "ubigeo": "941200",
+        "distritos": [
+          {
+            "nombre": "LONDRES",
+            "ubigeo": "941204"
+          }
+        ]
+      },
+      {
+        "nombre": "GRAN DUCADO DE LUXEMBURGO",
+        "ubigeo": "942000",
+        "distritos": [
+          {
+            "nombre": "LUXEMBURGO",
+            "ubigeo": "942001"
+          }
+        ]
+      },
+      {
+        "nombre": "GRECIA",
+        "ubigeo": "941300",
+        "distritos": [
+          {
+            "nombre": "ATENAS",
+            "ubigeo": "941301"
+          }
+        ]
+      },
+      {
+        "nombre": "HOLANDA",
+        "ubigeo": "941400",
+        "distritos": [
+          {
+            "nombre": "ÁMSTERDAM",
+            "ubigeo": "941401"
+          }
+        ]
+      },
+      {
+        "nombre": "HUNGRÍA",
+        "ubigeo": "941500",
+        "distritos": [
+          {
+            "nombre": "BUDAPEST",
+            "ubigeo": "941501"
+          }
+        ]
+      },
+      {
+        "nombre": "IRLANDA",
+        "ubigeo": "941800",
+        "distritos": [
+          {
+            "nombre": "DUBLÍN",
+            "ubigeo": "941801"
+          }
+        ]
+      },
+      {
+        "nombre": "ITALIA",
+        "ubigeo": "941700",
+        "distritos": [
+          {
+            "nombre": "BOLONIA",
+            "ubigeo": "941701"
+          },
+          {
+            "nombre": "BOLZANO",
+            "ubigeo": "941755"
+          },
+          {
+            "nombre": "FLORENCIA",
+            "ubigeo": "941703"
+          },
+          {
+            "nombre": "GÉNOVA",
+            "ubigeo": "941704"
+          },
+          {
+            "nombre": "MARCAS",
+            "ubigeo": "941717"
+          },
+          {
+            "nombre": "MILÁN",
+            "ubigeo": "941706"
+          },
+          {
+            "nombre": "NÁPOLES",
+            "ubigeo": "941707"
+          },
+          {
+            "nombre": "PERUGIA",
+            "ubigeo": "941748"
+          },
+          {
+            "nombre": "ROMA",
+            "ubigeo": "941709"
+          },
+          {
+            "nombre": "TRIESTE",
+            "ubigeo": "941710"
+          },
+          {
+            "nombre": "TURÍN",
+            "ubigeo": "941711"
+          }
+        ]
+      },
+      {
+        "nombre": "MACEDONIA",
+        "ubigeo": "943700",
+        "distritos": [
+          {
+            "nombre": "SKOPIE",
+            "ubigeo": "943701"
+          }
+        ]
+      },
+      {
+        "nombre": "MALTA",
+        "ubigeo": "942100",
+        "distritos": [
+          {
+            "nombre": "LA VALETTA",
+            "ubigeo": "942101"
+          }
+        ]
+      },
+      {
+        "nombre": "NORUEGA",
+        "ubigeo": "942300",
+        "distritos": [
+          {
+            "nombre": "OSLO",
+            "ubigeo": "942302"
+          }
+        ]
+      },
+      {
+        "nombre": "POLONIA",
+        "ubigeo": "942400",
+        "distritos": [
+          {
+            "nombre": "VARSOVIA",
+            "ubigeo": "942401"
+          }
+        ]
+      },
+      {
+        "nombre": "PORTUGAL",
+        "ubigeo": "942500",
+        "distritos": [
+          {
+            "nombre": "LISBOA",
+            "ubigeo": "942502"
+          }
+        ]
+      },
+      {
+        "nombre": "PRINCIPADO DE ANDORRA",
+        "ubigeo": "944200",
+        "distritos": [
+          {
+            "nombre": "ANDORRA LA VELLA",
+            "ubigeo": "944202"
+          }
+        ]
+      },
+      {
+        "nombre": "REPÚBLICA CHECA",
+        "ubigeo": "940600",
+        "distritos": [
+          {
+            "nombre": "PRAGA",
+            "ubigeo": "940601"
+          }
+        ]
+      },
+      {
+        "nombre": "RUMANÍA",
+        "ubigeo": "942600",
+        "distritos": [
+          {
+            "nombre": "BUCAREST",
+            "ubigeo": "942601"
+          },
+          {
+            "nombre": "TIMISOARA",
+            "ubigeo": "942604"
+          }
+        ]
+      },
+      {
+        "nombre": "RUSIA",
+        "ubigeo": "942900",
+        "distritos": [
+          {
+            "nombre": "MOSCÚ",
+            "ubigeo": "942901"
+          },
+          {
+            "nombre": "SAN PETERSBURGO",
+            "ubigeo": "942910"
+          }
+        ]
+      },
+      {
+        "nombre": "SUECIA",
+        "ubigeo": "942700",
+        "distritos": [
+          {
+            "nombre": "ESTOCOLMO",
+            "ubigeo": "942701"
+          },
+          {
+            "nombre": "MALMO",
+            "ubigeo": "942703"
+          }
+        ]
+      },
+      {
+        "nombre": "SUIZA",
+        "ubigeo": "942800",
+        "distritos": [
+          {
+            "nombre": "BERNA",
+            "ubigeo": "942802"
+          },
+          {
+            "nombre": "GINEBRA",
+            "ubigeo": "942803"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "nombre": "OCEANÍA",
+    "ubigeo": "950000",
+    "provincias": [
+      {
+        "nombre": "AUSTRALIA",
+        "ubigeo": "950100",
+        "distritos": [
+          {
+            "nombre": "BRISBANE",
+            "ubigeo": "950102"
+          },
+          {
+            "nombre": "CAMBERRA",
+            "ubigeo": "950103"
+          },
+          {
+            "nombre": "MELBOURNE",
+            "ubigeo": "950104"
+          },
+          {
+            "nombre": "PERTH",
+            "ubigeo": "950106"
+          },
+          {
+            "nombre": "SÍDNEY",
+            "ubigeo": "950105"
+          }
+        ]
+      },
+      {
+        "nombre": "NUEVA ZELANDA",
+        "ubigeo": "950200",
+        "distritos": [
+          {
+            "nombre": "AUCKLAND",
+            "ubigeo": "950201"
+          },
+          {
+            "nombre": "WELLINGTON",
+            "ubigeo": "950202"
+          }
+        ]
+      }
+    ]
   }
 ]

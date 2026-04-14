@@ -125,7 +125,7 @@ with col_dist:
 n_simulations    = st.sidebar.number_input("Simulaciones", min_value=500, max_value=5000, value=1000, step=100)
 confidence_level = st.sidebar.slider("Nivel de confianza", 0.80, 0.99, 0.95, step=0.01)
 prior_option     = st.sidebar.selectbox("Prior", ["flat", "jeffreys"])
-votes_per_acta   = st.sidebar.number_input("Votos por acta", min_value=0, max_value=300, value=0, step=1)
+votes_per_acta   = st.sidebar.number_input("Votos por acta", min_value=150, max_value=300, value=160, step=1)
 
 if st.button("Ejecutar simulación"):
     # Collect ubigeo IDs based on selection level — all from output.json directly

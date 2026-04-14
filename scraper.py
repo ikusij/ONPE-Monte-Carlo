@@ -10,78 +10,76 @@ headers = {
 }
 
 def get_initial_list():
-
-    DEPARTAMENTOS = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend/ubigeos/departamentos?idEleccion=10&idAmbitoGeografico=1"
-    PROVINCIAS = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend/ubigeos/provincias?idEleccion=10&idAmbitoGeografico=1&idUbigeoDepartamento={}" 
-    DISTRITO = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend/ubigeos/distritos?idEleccion=10&idAmbitoGeografico=1&idUbigeoProvincia={}"
+    DEPARTAMENTOS = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend/ubigeos/departamentos?idEleccion=10&idAmbitoGeografico={}"
+    PROVINCIAS = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend/ubigeos/provincias?idEleccion=10&idAmbitoGeografico={}&idUbigeoDepartamento={}"
+    DISTRITO = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend/ubigeos/distritos?idEleccion=10&idAmbitoGeografico={}&idUbigeoProvincia={}"
 
     def load_departamentos():
-
-        rsp = requests.get(DEPARTAMENTOS, headers=headers, timeout=10)
-        rsp.raise_for_status()
-        departamentos = rsp.json().get('data', [])
-
         data = []
-        for i, departamento in enumerate(departamentos):
-            
-            print(f"{i + 1}/25 {departamento["nombre"]}")
 
-            departamento_info = {
-                "nombre": departamento["nombre"],
-                "ubigeo": departamento["ubigeo"],
-                "provincias": load_provincias(departamento["ubigeo"])
-            }
+        # Correct looping over ambito geografico 1 and 2 (inclusive)
+        for ambito_geografico in [1, 2]:
+            try:
+                rsp = requests.get(DEPARTAMENTOS.format(ambito_geografico), headers=headers, timeout=10)
+                rsp.raise_for_status()
+                departamentos = rsp.json().get('data', [])
+            except Exception as e:
+                print(f"Failed to load departamentos for ambito {ambito_geografico}: {e}")
+                continue
 
-            data.append(departamento_info)
-            
+            for idx, departamento in enumerate(departamentos):
+                # Departamento names may be duplicated across ambitos, print ambito for clarity
+                print(f"Ambito {ambito_geografico}: {idx + 1}/{len(departamentos)} {departamento['nombre']}")
+
+                departamento_info = {
+                    "nombre": departamento["nombre"],
+                    "ubigeo": departamento["ubigeo"],
+                    "provincias": load_provincias(ambito_geografico, departamento["ubigeo"])
+                }
+                data.append(departamento_info)
         return data
 
-    def load_provincias(ubigeo_departamento):
-
+    def load_provincias(ambito_geografico, ubigeo_departamento):
         try:
-            rsp = requests.get(PROVINCIAS.format(ubigeo_departamento), headers=headers, timeout=10)
+            rsp = requests.get(PROVINCIAS.format(ambito_geografico, ubigeo_departamento), headers=headers, timeout=10)
             rsp.raise_for_status()
             provincias = rsp.json().get('data', [])
         except Exception as e:
-            print(f"Failed to load provincias {ubigeo_departamento}: {e}")
-            return {"provincias": [], "total": {}}
+            print(f"Failed to load provincias {ubigeo_departamento} for ambito {ambito_geografico}: {e}")
+            return []
 
         provincias_data = []
         for provincia in provincias:
-            
             provincia_info = {
                 "nombre": provincia["nombre"],
                 "ubigeo": provincia["ubigeo"],
-                "distritos": load_distritos(provincia["ubigeo"])
+                "distritos": load_distritos(ambito_geografico, provincia["ubigeo"])
             }
-
             provincias_data.append(provincia_info)
-
         return provincias_data
 
-    def load_distritos(ubigeo_provincia):
+    def load_distritos(ambito_geografico, ubigeo_provincia):
+        try:
+            rsp = requests.get(DISTRITO.format(ambito_geografico, ubigeo_provincia), headers=headers, timeout=10)
+            rsp.raise_for_status()
+            distritos = rsp.json().get('data', [])
+        except Exception as e:
+            print(f"Failed to load distritos {ubigeo_provincia} for ambito {ambito_geografico}: {e}")
+            return []
 
-        rsp = requests.get(DISTRITO.format(ubigeo_provincia), headers=headers, timeout=10)
-        rsp.raise_for_status()
-        distritos = rsp.json().get('data', [])
-        
         distritos_data = []
         for distrito in distritos:
-
             distrito_info = {
                 "nombre": distrito["nombre"],
                 "ubigeo": distrito["ubigeo"]
             }
-
             distritos_data.append(distrito_info)
-
         return distritos_data
 
     with open("output.json", "w", encoding="utf-8") as f:
         json.dump(load_departamentos(), f, ensure_ascii=False, indent=2)
 
 def write_zone_dict():
-
     with open("output.json", "r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -111,6 +109,5 @@ def write_zone_dict():
 
 
 if __name__ == "__main__":
-
+    get_initial_list()
     write_zone_dict()
-    

@@ -9,8 +9,8 @@ SESSION.headers.update({
 })
 
 BASE = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend"
-PARTICIPANTES_URL = BASE + "/eleccion-presidencial/participantes-ubicacion-geografica-nombre?tipoFiltro=ubigeo_nivel_03&idAmbitoGeografico=1&ubigeoNivel1={dep}&ubigeoNivel2={prov}&ubigeoNivel3={dist}&idEleccion=10"
-TOTALES_URL       = BASE + "/resumen-general/totales?idAmbitoGeografico=1&idEleccion=10&tipoFiltro=ubigeo_nivel_03&idUbigeoDepartamento={dep}&idUbigeoProvincia={prov}&idUbigeoDistrito={dist}"
+PARTICIPANTES_URL = BASE + "/eleccion-presidencial/participantes-ubicacion-geografica-nombre?tipoFiltro=ubigeo_nivel_03&idAmbitoGeografico={ambito}&ubigeoNivel1={dep}&ubigeoNivel2={prov}&ubigeoNivel3={dist}&idEleccion=10"
+TOTALES_URL       = BASE + "/resumen-general/totales?idAmbitoGeografico={ambito}&idEleccion=10&tipoFiltro=ubigeo_nivel_03&idUbigeoDepartamento={dep}&idUbigeoProvincia={prov}&idUbigeoDistrito={dist}"
 
 TOTALES_DROP_KEYS = {
     "idUbigeoDepartamento", "idUbigeoProvincia", "idUbigeoDistrito",
@@ -20,11 +20,14 @@ TOTALES_DROP_KEYS = {
 
 def _ubigeos(ubigeo_distrito: int | str) -> dict[str, str]:
     distrito = int(ubigeo_distrito)
-    return {
+    ubigeos = {
         "dep":  str(distrito // 10000 * 10000),
         "prov": str(distrito // 100 * 100),
         "dist": str(distrito),
     }
+    # Add ambito geografico rule
+    ubigeos["ambito"] = "2" if distrito >= 260000 else "1"
+    return ubigeos
 
 
 def _get(url: str, **ubigeo_kwargs) -> dict:
