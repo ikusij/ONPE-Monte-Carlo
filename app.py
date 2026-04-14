@@ -313,7 +313,7 @@ if st.button("Ejecutar simulación"):
     )
 
     # ── Desglose geográfico ──────────────────────────────────────────────────
-    if dist_sel == TODOS and district_results:
+    if dist_sel == TODOS and district_results and int(n_simulations) < 1000:
         if prov_sel != TODOS:
             geo_label  = "Distrito"
             key_fn     = lambda uid: ubigeo_names.get(uid, uid)
