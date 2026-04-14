@@ -15,11 +15,91 @@ with open("bundle.json", "r", encoding="utf-8") as f:
     bundle: dict = json.load(f)
 
 
-def province_code(ubigeo: str) -> str:
-    return str(ubigeo)[:4]
+@st.cache_data(show_spinner=False)
+def run_simulation(
+    ids: tuple,
+    n_simulations: int,
+    confidence_level: float,
+    prior: str,
+    votes_per_acta: int,
+):
+    data = [bundle[uid] for uid in ids if uid in bundle]
+    fetch_failures = [
+        {"Ubigeo": uid, "Distrito": uid, "Error": "No encontrado en el bundle"}
+        for uid in ids if uid not in bundle
+    ]
 
-def department_code(ubigeo: str) -> str:
-    return str(ubigeo)[:2]
+    if not data:
+        return None, [], [], fetch_failures
+
+    # Paso 1: simular distritos válidos
+    results = [
+        monte_carlo_simulation(
+            d,
+            MonteCarloConfig(
+                n_simulations=n_simulations,
+                prior=prior,
+                confidence_level=confidence_level,
+                random_seed=i,
+            ),
+        )
+        for i, d in enumerate(data)
+    ]
+
+    # Paso 2: agregados provinciales y departamentales
+    province_valid: dict[str, list] = {}
+    department_valid: dict[str, list] = {}
+    for d, r in zip(data, results):
+        if r is not None:
+            pc = str(d["ubigeo_distrito"])[:4]
+            dc = str(d["ubigeo_distrito"])[:2]
+            province_valid.setdefault(pc, []).append(r)
+            department_valid.setdefault(dc, []).append(r)
+
+    province_aggregates = {pc: aggregate_province(rs) for pc, rs in province_valid.items()}
+    department_aggregates = {dc: aggregate_province(rs) for dc, rs in department_valid.items()}
+
+    # Paso 3: sintetizar distritos omitidos
+    def _skip_reason(d):
+        if d["votosEmitidos"] == 0:
+            return "Sin votos contabilizados"
+        cand_sum = sum(v for k, v in d["candidatos"].items() if k != "VOTOS EN BLANCO")
+        if abs(cand_sum - d["votosEmitidos"]) > d["votosEmitidos"] * 0.05:
+            return f"Datos inconsistentes (candidatos: {cand_sum:,} vs emitidos: {d['votosEmitidos']:,})"
+        return "Desconocido"
+
+    estimated, truly_skipped, synthetic_results = [], [], []
+    for d, r in zip(data, results):
+        if r is not None:
+            continue
+        ubigeo_str = str(d["ubigeo_distrito"])
+        pc, dc = ubigeo_str[:4], ubigeo_str[:2]
+        prov_agg = province_aggregates.get(pc)
+        dept_agg = department_aggregates.get(dc)
+        fallback_agg = prov_agg or dept_agg
+        fallback_label = "provincia" if prov_agg else ("departamento" if dept_agg else None)
+        total_votes = d.get("pendientesJee", 0) * votes_per_acta
+        synthetic = make_synthetic_result(fallback_agg, total_votes)
+        row = {
+            "Ubigeo":             ubigeo_str,
+            "Distrito":           ubigeo_names.get(ubigeo_str, "—"),
+            "Motivo":             _skip_reason(d),
+            "Distribución usada": fallback_label or "—",
+            "Votos est. (actas)": total_votes,
+        }
+        if synthetic is not None:
+            synthetic_results.append(synthetic)
+            estimated.append(row)
+        else:
+            truly_skipped.append(row)
+
+    # Paso 4: agregación final
+    all_results = [r for r in results if r is not None] + synthetic_results
+    if not all_results:
+        return None, estimated, truly_skipped, fetch_failures
+
+    return aggregate_province(all_results), estimated, truly_skipped, fetch_failures
+
 
 
 def make_synthetic_result(province_agg: SimulationResult, total_votes: int) -> SimulationResult | None:
@@ -149,108 +229,18 @@ if st.button("Ejecutar simulación"):
         "Nacional"
     )
 
-    data = []
-    fetch_failures = []
-    for ubigeo in ids:
-        row = bundle.get(str(ubigeo))
-        if row is not None:
-            data.append(row)
-        else:
-            fetch_failures.append({
-                "Ubigeo":   str(ubigeo),
-                "Distrito": ubigeo_names.get(str(ubigeo), "—"),
-                "Error":    "No encontrado en el bundle",
-            })
-
-    if not data:
-        st.error("No se encontraron datos en el bundle para esta zona.")
-        st.stop()
-
-    # ── Paso 1: simular distritos válidos ────────────────────────────────────
     with st.spinner("Ejecutando simulación Monte Carlo…"):
-        results = [
-            monte_carlo_simulation(
-                d,
-                MonteCarloConfig(
-                    n_simulations=int(n_simulations),
-                    prior=prior_option,
-                    confidence_level=confidence_level,
-                    random_seed=i,
-                ),
-            )
-            for i, d in enumerate(data)
-        ]
+        result, estimated, truly_skipped, fetch_failures = run_simulation(
+            ids=tuple(ids),
+            n_simulations=int(n_simulations),
+            confidence_level=confidence_level,
+            prior=prior_option,
+            votes_per_acta=int(votes_per_acta),
+        )
 
-    # ── Paso 2: agregados provinciales de distritos válidos ──────────────────
-    province_valid: dict[str, list[SimulationResult]] = {}
-    for d, r in zip(data, results):
-        if r is not None:
-            pc = province_code(str(d["ubigeo_distrito"]))
-            province_valid.setdefault(pc, []).append(r)
-
-    province_aggregates: dict[str, SimulationResult] = {
-        pc: aggregate_province(rs)
-        for pc, rs in province_valid.items()
-    }
-
-    department_valid: dict[str, list[SimulationResult]] = {}
-    for d, r in zip(data, results):
-        if r is not None:
-            dc = department_code(str(d["ubigeo_distrito"]))
-            department_valid.setdefault(dc, []).append(r)
-
-    department_aggregates: dict[str, SimulationResult] = {
-        dc: aggregate_province(rs)
-        for dc, rs in department_valid.items()
-    }
-
-    # ── Paso 3: sintetizar distritos omitidos con distribución provincial ────
-    estimated, truly_skipped = [], []
-    synthetic_results = []
-
-    def _skip_reason(d):
-        if d["votosEmitidos"] == 0:
-            return "Sin votos contabilizados"
-        cand_sum = sum(v for k, v in d["candidatos"].items() if k != "VOTOS EN BLANCO")
-        if abs(cand_sum - d["votosEmitidos"]) > d["votosEmitidos"] * 0.05:
-            return f"Datos inconsistentes (candidatos: {cand_sum:,} vs emitidos: {d['votosEmitidos']:,})"
-        return "Desconocido"
-
-    for d, r in zip(data, results):
-        if r is not None:
-            continue
-        ubigeo_str = str(d["ubigeo_distrito"])
-        pc = province_code(ubigeo_str)
-        dc = department_code(ubigeo_str)
-        prov_agg = province_aggregates.get(pc)
-        dept_agg = department_aggregates.get(dc)
-        fallback_agg = prov_agg or dept_agg
-        fallback_label = "provincia" if prov_agg else ("departamento" if dept_agg else None)
-        total_votes = d.get("pendientesJee", 0) * int(votes_per_acta)
-        synthetic = make_synthetic_result(fallback_agg, total_votes)
-
-        row = {
-            "Ubigeo":              ubigeo_str,
-            "Distrito":            ubigeo_names.get(ubigeo_str, "—"),
-            "Motivo":              _skip_reason(d),
-            "Distribución usada":  fallback_label or "—",
-            "Votos est. (actas)":  total_votes,
-        }
-
-        if synthetic is not None:
-            synthetic_results.append(synthetic)
-            estimated.append(row)
-        else:
-            truly_skipped.append(row)
-
-    # ── Paso 4: agregación final ─────────────────────────────────────────────
-    all_results = [r for r in results if r is not None] + synthetic_results
-
-    if not all_results:
+    if result is None:
         st.error("Sin datos utilizables para esta zona — todos los distritos fueron omitidos y no se pudo inferir una distribución provincial.")
         st.stop()
-
-    result = aggregate_province(all_results)
 
     ci_pct = int(result.confidence_level * 100)
 
