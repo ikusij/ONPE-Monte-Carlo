@@ -15,7 +15,6 @@ with open("bundle.json", "r", encoding="utf-8") as f:
     bundle: dict = json.load(f)
 
 
-@st.cache_data(show_spinner=False)
 def run_simulation(
     ids: tuple,
     n_simulations: int,
@@ -112,6 +111,9 @@ def run_simulation(
                     district_results.append((ubigeo_str, synthetic))
 
     return aggregate_province(all_results), estimated, truly_skipped, fetch_failures, district_results
+
+
+_run_simulation_cached = st.cache_data(show_spinner=False)(run_simulation)
 
 
 
@@ -251,8 +253,9 @@ if st.button("Ejecutar simulación"):
         "Nacional"
     )
 
+    _sim_fn = _run_simulation_cached if dist_sel == TODOS else run_simulation
     with st.spinner("Ejecutando simulación Monte Carlo…"):
-        result, estimated, truly_skipped, fetch_failures, district_results = run_simulation(
+        result, estimated, truly_skipped, fetch_failures, district_results = _sim_fn(
             ids=tuple(ids),
             n_simulations=int(n_simulations),
             confidence_level=confidence_level,
