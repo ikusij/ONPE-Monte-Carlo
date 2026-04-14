@@ -222,7 +222,7 @@ with col_dist:
         dist_sel = st.selectbox("Distrito", dist_options)
         dist_ubigeo = next((uid for name, uid in pairs if name == dist_sel), None)
 
-n_simulations    = st.sidebar.number_input("Simulaciones", min_value=500, max_value=3000, value=100, step=100)
+n_simulations    = st.sidebar.number_input("Simulaciones", min_value=500, max_value=3000, value=1000, step=100)
 confidence_level = st.sidebar.slider("Nivel de confianza", 0.80, 0.99, 0.95, step=0.01)
 prior_option     = st.sidebar.selectbox("Prior", ["flat", "jeffreys"])
 votes_per_acta   = st.sidebar.number_input(
