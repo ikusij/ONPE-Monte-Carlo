@@ -229,12 +229,19 @@ if st.button("Ejecutar simulación"):
     pct_cols = ["Porcentaje actual", "Porcentaje proyectado", f"IC inferior ({ci_pct}%)", f"IC superior ({ci_pct}%)", "Prob. de victoria"]
     int_cols = ["Votos contabilizados", "Votos proyectados", "Votos adicionales"]
 
-    st.dataframe(
+    # Custom styling for 'Porcentaje proyectado' and 'Prob. de victoria' to show red text, no background
+    def style_red_text(val):
+        return "color: red;"  # Only red text, no background
+
+    styled_df = (
         df.style
             .format({col: "{:.2%}" for col in pct_cols})
             .format({col: "{:,}"   for col in int_cols})
-            .highlight_max(subset=["Prob. de victoria"],     color="#d4edda")
-            .highlight_max(subset=["Porcentaje proyectado"], color="#cce5ff"),
+    )
+
+    # Remove highlight_max for "Porcentaje proyectado" and "Prob. de victoria", keep for others if needed
+    st.dataframe(
+        styled_df,
         use_container_width=True,
         hide_index=True,
     )
@@ -267,3 +274,4 @@ if st.button("Ejecutar simulación"):
         with st.expander(f"Distritos no encontrados en el bundle ({len(fetch_failures)})"):
             st.write("Estos distritos no fueron encontrados en el bundle de datos y fueron excluidos.")
             st.dataframe(pd.DataFrame(fetch_failures), use_container_width=True, hide_index=True)
+    
