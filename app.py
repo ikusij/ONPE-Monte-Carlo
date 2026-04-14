@@ -100,11 +100,16 @@ if st.button("Run simulation"):
 
     progress = st.progress(0, text="Fetching data…")
     data = []
+    fetch_failures = []
     for i, ubigeo in enumerate(ids):
         try:
             data.append(format_data(ubigeo, int(votes_per_acta)))
         except Exception as e:
-            st.warning(f"Ubigeo {ubigeo} failed: {e}")
+            fetch_failures.append({
+                "Ubigeo":   str(ubigeo),
+                "District": ubigeo_names.get(str(ubigeo), "—"),
+                "Error":    str(e),
+            })
         progress.progress((i + 1) / len(ids), text=f"Fetching data… {i+1}/{len(ids)}")
     progress.empty()
 
@@ -261,3 +266,8 @@ if st.button("Run simulation"):
                 "so they were excluded from the simulation entirely."
             )
             st.dataframe(pd.DataFrame(truly_skipped), use_container_width=True, hide_index=True)
+
+    if fetch_failures:
+        with st.expander(f"Districts that could not be fetched ({len(fetch_failures)})"):
+            st.write("These districts returned an error from the API and were excluded entirely.")
+            st.dataframe(pd.DataFrame(fetch_failures), use_container_width=True, hide_index=True)
