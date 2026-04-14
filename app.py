@@ -30,7 +30,7 @@ def run_simulation(
     ]
 
     if not data:
-        return None, [], [], fetch_failures
+        return None, [], [], fetch_failures, []
 
     # Paso 1: simular distritos válidos
     results = [
@@ -94,11 +94,23 @@ def run_simulation(
             truly_skipped.append(row)
 
     # Paso 4: agregación final
+    # Build (ubigeo, result) pairs for all districts including synthetics
+    district_results: list[tuple[str, SimulationResult]] = []
+    synthetic_iter = iter(synthetic_results)
+    for d, r in zip(data, results):
+        ubigeo_str = str(d["ubigeo_distrito"])
+        if r is not None:
+            district_results.append((ubigeo_str, r))
+        else:
+            synthetic = next(synthetic_iter, None)
+            if synthetic is not None:
+                district_results.append((ubigeo_str, synthetic))
+
     all_results = [r for r in results if r is not None] + synthetic_results
     if not all_results:
-        return None, estimated, truly_skipped, fetch_failures
+        return None, estimated, truly_skipped, fetch_failures, []
 
-    return aggregate_province(all_results), estimated, truly_skipped, fetch_failures
+    return aggregate_province(all_results), estimated, truly_skipped, fetch_failures, district_results
 
 
 
@@ -157,7 +169,9 @@ with open("nombre_ubigeo.json", "r", encoding="utf-8") as f:
 with open("output.json", "r", encoding="utf-8") as f:
     _output = json.load(f)
 
-ubigeo_names: dict[str, str] = {}
+ubigeo_names: dict[str, str] = {}     # ubigeo → district name
+ubigeo_to_dept: dict[str, str] = {}   # ubigeo → department name
+ubigeo_to_prov: dict[str, str] = {}   # ubigeo → province name
 # Hierarchy: department → province → [(district_name, ubigeo_code)]
 # Uses ubigeo codes from output.json directly — avoids name collisions in nombre_ubigeo.json
 hierarchy: dict[str, dict[str, list[tuple[str, str]]]] = {}
@@ -174,7 +188,10 @@ for dept in _output:
         if pairs:
             hierarchy[dept_name][prov_name] = sorted(pairs, key=lambda x: x[0])
         for dist in prov.get("distritos", []):
-            ubigeo_names[str(dist["ubigeo"])] = dist["nombre"]
+            uid = str(dist["ubigeo"])
+            ubigeo_names[uid]    = dist["nombre"]
+            ubigeo_to_dept[uid]  = dept_name
+            ubigeo_to_prov[uid]  = prov_name
 
 TODOS = "— Todos —"
 
@@ -205,7 +222,11 @@ with col_dist:
 n_simulations    = st.sidebar.number_input("Simulaciones", min_value=500, max_value=3000, value=3000, step=100)
 confidence_level = st.sidebar.slider("Nivel de confianza", 0.80, 0.99, 0.95, step=0.01)
 prior_option     = st.sidebar.selectbox("Prior", ["flat", "jeffreys"])
-votes_per_acta   = st.sidebar.number_input("Votos por acta", min_value=150, max_value=300, value=160, step=1)
+votes_per_acta   = st.sidebar.number_input(
+    "Votos por acta",
+    min_value=150, max_value=300, value=160, step=1,
+    help="Número estimado de votos por acta electoral. Se usa para calcular los votos pendientes en distritos sin datos (votos estimados = actas pendientes × este valor).",
+)
 
 if st.button("Ejecutar simulación"):
     # Collect ubigeo IDs based on selection level — all from output.json directly
@@ -230,7 +251,7 @@ if st.button("Ejecutar simulación"):
     )
 
     with st.spinner("Ejecutando simulación Monte Carlo…"):
-        result, estimated, truly_skipped, fetch_failures = run_simulation(
+        result, estimated, truly_skipped, fetch_failures, district_results = run_simulation(
             ids=tuple(ids),
             n_simulations=int(n_simulations),
             confidence_level=confidence_level,
@@ -277,17 +298,12 @@ if st.button("Ejecutar simulación"):
         return "color: red;"  # Only red text, no background
 
     styled_df = (
-        df.style
+        df.set_index("Candidato").style
             .format({col: "{:.2%}" for col in pct_cols})
             .format({col: "{:,}"   for col in int_cols})
     )
 
-    # Remove highlight_max for "Porcentaje proyectado" and "Prob. de victoria", keep for others if needed
-    st.dataframe(
-        styled_df,
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.dataframe(styled_df, use_container_width=True)
 
     winner = result.projected_winner
     st.success(
@@ -295,6 +311,54 @@ if st.button("Ejecutar simulación"):
         f"probabilidad de victoria {winner.win_probability:.1%}, "
         f"porcentaje proyectado {winner.projected_share:.2%}"
     )
+
+    # ── Desglose geográfico ──────────────────────────────────────────────────
+    if dist_sel == TODOS and district_results:
+        if prov_sel != TODOS:
+            geo_label  = "Distrito"
+            key_fn     = lambda uid: ubigeo_names.get(uid, uid)
+        elif dept_sel != TODOS:
+            geo_label  = "Provincia"
+            key_fn     = lambda uid: ubigeo_to_prov.get(uid, uid)
+        else:
+            geo_label  = "Departamento"
+            key_fn     = lambda uid: ubigeo_to_dept.get(uid, uid)
+
+        groups: dict[str, list] = {}
+        for ubigeo, r in district_results:
+            groups.setdefault(key_fn(ubigeo), []).append(r)
+
+        top_candidates = [c.name for c in result.candidates[:5]]
+
+        breakdown_rows = []
+        for geo_name, group_results in sorted(groups.items()):
+            grp = aggregate_province(group_results)
+            cand_map = {c.name: c for c in grp.candidates}
+            row = {
+                geo_label:              geo_name,
+                "% contabilizado":      grp.pct_counted,
+                "Votos contabilizados": grp.votes_counted,
+                "Total votos":          grp.total_votes,
+                "Ganador proyectado":   grp.projected_winner.name,
+            }
+            for name in top_candidates:
+                c = cand_map.get(name)
+                if c:
+                    proj = int(c.projected_share * grp.total_votes)
+                    row[f"{name} — proy."] = proj
+                    row[f"{name} — adic."] = proj - c.votes_counted
+            breakdown_rows.append(row)
+
+        with st.expander(f"Desglose por {geo_label.lower()} ({len(breakdown_rows)})"):
+            bdf = pd.DataFrame(breakdown_rows).set_index(geo_label)
+            pct_b = ["% contabilizado"]
+            int_b = ["Votos contabilizados", "Total votos"] + [c for c in bdf.columns if "proy." in c or "adic." in c]
+            st.dataframe(
+                bdf.style
+                    .format({col: "{:.1%}" for col in pct_b})
+                    .format({col: "{:,}"   for col in int_b}),
+                use_container_width=True,
+            )
 
     if estimated:
         with st.expander(f"Distritos estimados con distribución provincial ({len(estimated)})"):
