@@ -85,10 +85,10 @@ for dept in _output:
 
 zone = st.selectbox("Seleccionar zona", sorted(nombre_ubigeo.keys()))
 
-n_simulations    = st.sidebar.number_input("Simulaciones", min_value=1_000, max_value=100_000, value=10_000, step=1_000)
+n_simulations    = st.sidebar.number_input("Simulaciones", min_value=500, max_value=5000, value=1000, step=100)
 confidence_level = st.sidebar.slider("Nivel de confianza", 0.80, 0.99, 0.95, step=0.01)
 prior_option     = st.sidebar.selectbox("Prior", ["flat", "jeffreys"])
-votes_per_acta   = st.sidebar.number_input("Votos por acta", min_value=1, max_value=1_000, value=250, step=1)
+votes_per_acta   = st.sidebar.number_input("Votos por acta", min_value=100, max_value=300, value=160, step=1)
 
 if st.button("Ejecutar simulación"):
     ids = nombre_ubigeo.get(zone, [])
