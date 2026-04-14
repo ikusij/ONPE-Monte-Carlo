@@ -227,7 +227,7 @@ confidence_level = st.sidebar.slider("Nivel de confianza", 0.80, 0.99, 0.95, ste
 prior_option     = st.sidebar.selectbox("Prior", ["flat", "jeffreys"])
 votes_per_acta   = st.sidebar.number_input(
     "Votos por acta",
-    min_value=150, max_value=300, value=160, step=1,
+    min_value=150, max_value=300, value=220, step=1,
     help="Número estimado de votos por acta electoral. Se usa para calcular los votos pendientes en distritos sin datos (votos estimados = actas pendientes × este valor).",
 )
 
