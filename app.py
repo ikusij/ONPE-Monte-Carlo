@@ -22,6 +22,7 @@ def run_simulation(
     confidence_level: float,
     prior: str,
     votes_per_acta: int,
+    compute_breakdown: bool = False,
 ):
     data = [bundle[uid] for uid in ids if uid in bundle]
     fetch_failures = [
@@ -94,21 +95,21 @@ def run_simulation(
             truly_skipped.append(row)
 
     # Paso 4: agregación final
-    # Build (ubigeo, result) pairs for all districts including synthetics
-    district_results: list[tuple[str, SimulationResult]] = []
-    synthetic_iter = iter(synthetic_results)
-    for d, r in zip(data, results):
-        ubigeo_str = str(d["ubigeo_distrito"])
-        if r is not None:
-            district_results.append((ubigeo_str, r))
-        else:
-            synthetic = next(synthetic_iter, None)
-            if synthetic is not None:
-                district_results.append((ubigeo_str, synthetic))
-
     all_results = [r for r in results if r is not None] + synthetic_results
     if not all_results:
         return None, estimated, truly_skipped, fetch_failures, []
+
+    district_results = []
+    if compute_breakdown:
+        synthetic_iter = iter(synthetic_results)
+        for d, r in zip(data, results):
+            ubigeo_str = str(d["ubigeo_distrito"])
+            if r is not None:
+                district_results.append((ubigeo_str, r))
+            else:
+                synthetic = next(synthetic_iter, None)
+                if synthetic is not None:
+                    district_results.append((ubigeo_str, synthetic))
 
     return aggregate_province(all_results), estimated, truly_skipped, fetch_failures, district_results
 
@@ -257,6 +258,7 @@ if st.button("Ejecutar simulación"):
             confidence_level=confidence_level,
             prior=prior_option,
             votes_per_acta=int(votes_per_acta),
+            compute_breakdown=dist_sel == TODOS and int(n_simulations) < 1000,
         )
 
     if result is None:
