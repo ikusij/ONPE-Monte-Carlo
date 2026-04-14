@@ -82,11 +82,11 @@ def monte_carlo_simulation(
     current_shares = counts / count_sum
  
     rng = np.random.default_rng(config.random_seed)
-    remaining_draws = rng.dirichlet(alphas, size=config.n_simulations)
- 
+    remaining_draws = rng.dirichlet(alphas, size=config.n_simulations).astype(np.float32)
+
     finals = (
-        current_shares[np.newaxis, :] * counted_frac
-        + remaining_draws * remaining_frac
+        current_shares[np.newaxis, :].astype(np.float32) * np.float32(counted_frac)
+        + remaining_draws * np.float32(remaining_frac)
     )
  
     lo = (1.0 - config.confidence_level) / 2.0
@@ -173,7 +173,7 @@ def aggregate_province(district_results: list[SimulationResult]) -> SimulationRe
     name_to_idx  = {name: i for i, name in enumerate(all_names)}
     total_votes  = sum(r.total_votes for r in district_results)
 
-    province_finals = np.zeros((n_sim, len(all_names)))
+    province_finals = np.zeros((n_sim, len(all_names)), dtype=np.float32)
     for r in district_results:
         for local_idx, name in enumerate(r.candidate_names):
             province_finals[:, name_to_idx[name]] += r.raw_finals[:, local_idx] * r.total_votes

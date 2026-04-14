@@ -11,8 +11,12 @@ from monte_carlo import (
     aggregate_province,
 )
 
-with open("bundle.json", "r", encoding="utf-8") as f:
-    bundle: dict = json.load(f)
+@st.cache_resource(show_spinner=False)
+def _load_bundle() -> dict:
+    with open("bundle.json", "r", encoding="utf-8") as f:
+        return json.load(f)
+
+bundle: dict = _load_bundle()
 
 
 def run_simulation(
@@ -22,6 +26,7 @@ def run_simulation(
     prior: str,
     votes_per_acta: int,
     compute_breakdown: bool = False,
+    geo_grouping: str = "none",   # "district" | "province" | "department" | "none"
 ):
     data = [bundle[uid] for uid in ids if uid in bundle]
     fetch_failures = [
@@ -98,22 +103,67 @@ def run_simulation(
     if not all_results:
         return None, estimated, truly_skipped, fetch_failures, []
 
-    district_results = []
-    if compute_breakdown:
+    final_agg = aggregate_province(all_results)
+
+    # Compute geographic breakdown before freeing raw arrays
+    breakdown = None
+    if compute_breakdown and geo_grouping != "none":
+        if geo_grouping == "district":
+            geo_label = "Distrito"
+            key_fn = lambda uid: ubigeo_names.get(uid, uid)
+        elif geo_grouping == "province":
+            geo_label = "Provincia"
+            key_fn = lambda uid: ubigeo_to_prov.get(uid, uid)
+        else:
+            geo_label = "Departamento"
+            key_fn = lambda uid: ubigeo_to_dept.get(uid, uid)
+
+        top_candidates = [c.name for c in final_agg.candidates[:5]]
+        district_pairs = []
         synthetic_iter = iter(synthetic_results)
         for d, r in zip(data, results):
             ubigeo_str = str(d["ubigeo_distrito"])
             if r is not None:
-                district_results.append((ubigeo_str, r))
+                district_pairs.append((ubigeo_str, r))
             else:
-                synthetic = next(synthetic_iter, None)
-                if synthetic is not None:
-                    district_results.append((ubigeo_str, synthetic))
+                syn = next(synthetic_iter, None)
+                if syn is not None:
+                    district_pairs.append((ubigeo_str, syn))
 
-    return aggregate_province(all_results), estimated, truly_skipped, fetch_failures, district_results
+        groups: dict[str, list] = {}
+        for ubigeo, r in district_pairs:
+            groups.setdefault(key_fn(ubigeo), []).append(r)
+
+        breakdown_rows = []
+        for geo_name, group_results in sorted(groups.items()):
+            grp = aggregate_province(group_results)
+            cand_map = {c.name: c for c in grp.candidates}
+            row = {
+                geo_label:              geo_name,
+                "% contabilizado":      grp.pct_counted,
+                "Votos contabilizados": grp.votes_counted,
+                "Total votos":          grp.total_votes,
+                "Ganador proyectado":   grp.projected_winner.name,
+            }
+            for name in top_candidates:
+                c = cand_map.get(name)
+                if c:
+                    proj = int(c.projected_share * grp.total_votes)
+                    row[f"{name} — proy."] = proj
+                    row[f"{name} — adic."] = proj - c.votes_counted
+            breakdown_rows.append(row)
+
+        breakdown = (geo_label, breakdown_rows)
+
+    # Free raw simulation arrays — large numpy matrices not needed after aggregation
+    for r in all_results:
+        r.raw_finals = None
+    final_agg.raw_finals = None
+
+    return final_agg, estimated, truly_skipped, fetch_failures, breakdown
 
 
-_run_simulation_cached = st.cache_data(show_spinner=False)(run_simulation)
+_run_simulation_cached = st.cache_data(show_spinner=False, max_entries=10, ttl=1800)(run_simulation)
 
 
 
@@ -166,35 +216,35 @@ def make_synthetic_result(province_agg: SimulationResult, total_votes: int) -> S
 st.set_page_config(page_title="ONPE Probabilidad de Victoria", layout="wide")
 st.title("ONPE — Probabilidad de Victoria Electoral")
 
-with open("nombre_ubigeo.json", "r", encoding="utf-8") as f:
-    nombre_ubigeo: dict[str, list] = json.load(f)
+@st.cache_resource(show_spinner=False)
+def _load_geo_data() -> tuple[dict, dict, dict, dict]:
+    with open("output.json", "r", encoding="utf-8") as f:
+        _output = json.load(f)
 
-with open("output.json", "r", encoding="utf-8") as f:
-    _output = json.load(f)
+    _ubigeo_names: dict[str, str] = {}
+    _ubigeo_to_dept: dict[str, str] = {}
+    _ubigeo_to_prov: dict[str, str] = {}
+    _hierarchy: dict[str, dict[str, list[tuple[str, str]]]] = {}
+    for dept in _output:
+        dept_name = dept["nombre"]
+        _hierarchy[dept_name] = {}
+        for prov in dept.get("provincias", []):
+            prov_name = prov["nombre"]
+            pairs = [
+                (d["nombre"], str(d["ubigeo"]))
+                for d in prov.get("distritos", [])
+                if str(d["ubigeo"]) in bundle
+            ]
+            if pairs:
+                _hierarchy[dept_name][prov_name] = sorted(pairs, key=lambda x: x[0])
+            for dist in prov.get("distritos", []):
+                uid = str(dist["ubigeo"])
+                _ubigeo_names[uid]    = dist["nombre"]
+                _ubigeo_to_dept[uid]  = dept_name
+                _ubigeo_to_prov[uid]  = prov_name
+    return _ubigeo_names, _ubigeo_to_dept, _ubigeo_to_prov, _hierarchy
 
-ubigeo_names: dict[str, str] = {}     # ubigeo → district name
-ubigeo_to_dept: dict[str, str] = {}   # ubigeo → department name
-ubigeo_to_prov: dict[str, str] = {}   # ubigeo → province name
-# Hierarchy: department → province → [(district_name, ubigeo_code)]
-# Uses ubigeo codes from output.json directly — avoids name collisions in nombre_ubigeo.json
-hierarchy: dict[str, dict[str, list[tuple[str, str]]]] = {}
-for dept in _output:
-    dept_name = dept["nombre"]
-    hierarchy[dept_name] = {}
-    for prov in dept.get("provincias", []):
-        prov_name = prov["nombre"]
-        pairs = [
-            (d["nombre"], str(d["ubigeo"]))
-            for d in prov.get("distritos", [])
-            if str(d["ubigeo"]) in bundle
-        ]
-        if pairs:
-            hierarchy[dept_name][prov_name] = sorted(pairs, key=lambda x: x[0])
-        for dist in prov.get("distritos", []):
-            uid = str(dist["ubigeo"])
-            ubigeo_names[uid]    = dist["nombre"]
-            ubigeo_to_dept[uid]  = dept_name
-            ubigeo_to_prov[uid]  = prov_name
+ubigeo_names, ubigeo_to_dept, ubigeo_to_prov, hierarchy = _load_geo_data()
 
 TODOS = "— Todos —"
 
@@ -222,7 +272,7 @@ with col_dist:
         dist_sel = st.selectbox("Distrito", dist_options)
         dist_ubigeo = next((uid for name, uid in pairs if name == dist_sel), None)
 
-n_simulations    = st.sidebar.number_input("Simulaciones", min_value=500, max_value=3000, value=1000, step=100)
+n_simulations    = st.sidebar.number_input("Simulaciones", min_value=500, max_value=2000, value=500, step=100)
 confidence_level = st.sidebar.slider("Nivel de confianza", 0.80, 0.99, 0.95, step=0.01)
 prior_option     = st.sidebar.selectbox("Prior", ["flat", "jeffreys"])
 votes_per_acta   = st.sidebar.number_input(
@@ -253,15 +303,26 @@ if st.button("Ejecutar simulación"):
         "Nacional"
     )
 
+    if dist_sel == TODOS:
+        if prov_sel != TODOS:
+            geo_grouping = "district"
+        elif dept_sel != TODOS:
+            geo_grouping = "province"
+        else:
+            geo_grouping = "department"
+    else:
+        geo_grouping = "none"
+
     _sim_fn = _run_simulation_cached if dist_sel == TODOS else run_simulation
     with st.spinner("Ejecutando simulación Monte Carlo…"):
-        result, estimated, truly_skipped, fetch_failures, district_results = _sim_fn(
+        result, estimated, truly_skipped, fetch_failures, breakdown = _sim_fn(
             ids=tuple(ids),
             n_simulations=int(n_simulations),
             confidence_level=confidence_level,
             prior=prior_option,
             votes_per_acta=int(votes_per_acta),
             compute_breakdown=dist_sel == TODOS and int(n_simulations) <= 1000,
+            geo_grouping=geo_grouping,
         )
 
     if result is None:
@@ -318,42 +379,8 @@ if st.button("Ejecutar simulación"):
     )
 
     # ── Desglose geográfico ──────────────────────────────────────────────────
-    if dist_sel == TODOS and district_results and int(n_simulations) <= 1000:
-        if prov_sel != TODOS:
-            geo_label  = "Distrito"
-            key_fn     = lambda uid: ubigeo_names.get(uid, uid)
-        elif dept_sel != TODOS:
-            geo_label  = "Provincia"
-            key_fn     = lambda uid: ubigeo_to_prov.get(uid, uid)
-        else:
-            geo_label  = "Departamento"
-            key_fn     = lambda uid: ubigeo_to_dept.get(uid, uid)
-
-        groups: dict[str, list] = {}
-        for ubigeo, r in district_results:
-            groups.setdefault(key_fn(ubigeo), []).append(r)
-
-        top_candidates = [c.name for c in result.candidates[:5]]
-
-        breakdown_rows = []
-        for geo_name, group_results in sorted(groups.items()):
-            grp = aggregate_province(group_results)
-            cand_map = {c.name: c for c in grp.candidates}
-            row = {
-                geo_label:              geo_name,
-                "% contabilizado":      grp.pct_counted,
-                "Votos contabilizados": grp.votes_counted,
-                "Total votos":          grp.total_votes,
-                "Ganador proyectado":   grp.projected_winner.name,
-            }
-            for name in top_candidates:
-                c = cand_map.get(name)
-                if c:
-                    proj = int(c.projected_share * grp.total_votes)
-                    row[f"{name} — proy."] = proj
-                    row[f"{name} — adic."] = proj - c.votes_counted
-            breakdown_rows.append(row)
-
+    if breakdown:
+        geo_label, breakdown_rows = breakdown
         with st.expander(f"Desglose por {geo_label.lower()} ({len(breakdown_rows)})"):
             bdf = pd.DataFrame(breakdown_rows).set_index(geo_label)
             pct_b = ["% contabilizado"]
