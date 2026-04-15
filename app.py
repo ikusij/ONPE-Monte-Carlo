@@ -499,11 +499,15 @@ if active_tab == "Votos Nulos":
         .rename(columns={"Votos_nulos_total": "Votos nulos (total)", "Votos_emitidos_total": "Votos emitidos (total)"})
     )
     agg["% distritos"] = agg["Distritos"] / agg["Distritos"].sum() * 100
+    agg["Votos para llegar a la media"] = (
+        agg["Votos nulos (total)"] - (global_mean_pct / 100) * agg["Votos emitidos (total)"]
+    ).clip(lower=0).round().astype(int)
 
     st.dataframe(
         agg.style
             .format({"% nulos promedio": "{:.2f}%", "% distritos": "{:.1f}%",
-                     "Votos nulos (total)": "{:,}", "Votos emitidos (total)": "{:,}"}),
+                     "Votos nulos (total)": "{:,}", "Votos emitidos (total)": "{:,}",
+                     "Votos para llegar a la media": "{:,}"}),
         use_container_width=True,
     )
 
