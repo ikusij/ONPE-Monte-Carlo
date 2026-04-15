@@ -217,6 +217,48 @@ st.set_page_config(page_title="ONPE Probabilidad de Victoria", layout="wide")
 st.title("ONPE — Probabilidad de Victoria Electoral")
 
 @st.cache_resource(show_spinner=False)
+def _load_null_votes_data() -> pd.DataFrame:
+    """Pre-compute null vote stats for every district, joined with geo names."""
+    with open("output.json", "r", encoding="utf-8") as f:
+        _output = json.load(f)
+
+    ubigeo_to_geo: dict[str, dict] = {}
+    for dept in _output:
+        for prov in dept.get("provincias", []):
+            for dist in prov.get("distritos", []):
+                ubigeo_to_geo[str(dist["ubigeo"])] = {
+                    "Departamento": dept["nombre"],
+                    "Provincia":    prov["nombre"],
+                    "Distrito":     dist["nombre"],
+                }
+
+    excluded = {"VOTOS NULOS", "VOTOS EN BLANCO"}
+    rows = []
+    for ubigeo, district in bundle.items():
+        emitidos = district.get("votosEmitidos", 0)
+        if emitidos == 0:
+            continue
+        candidatos = district.get("candidatos", {})
+        nulos = candidatos.get("VOTOS NULOS", 0)
+        pct = nulos / emitidos * 100
+        valid = {k: v for k, v in candidatos.items() if k not in excluded}
+        leader = max(valid, key=lambda k: valid[k]) if valid else "—"
+        geo = ubigeo_to_geo.get(ubigeo, {"Departamento": "—", "Provincia": "—", "Distrito": ubigeo})
+        rows.append({
+            "Departamento":  geo["Departamento"],
+            "Provincia":     geo["Provincia"],
+            "Distrito":      geo["Distrito"],
+            "Ubigeo":        ubigeo,
+            "Votos emitidos": emitidos,
+            "Votos nulos":   nulos,
+            "% nulos":       pct,
+            "Líder":         leader,
+        })
+
+    return pd.DataFrame(rows)
+
+
+@st.cache_resource(show_spinner=False)
 def _load_geo_data() -> tuple[dict, dict, dict, dict]:
     with open("output.json", "r", encoding="utf-8") as f:
         _output = json.load(f)
@@ -245,172 +287,244 @@ def _load_geo_data() -> tuple[dict, dict, dict, dict]:
     return _ubigeo_names, _ubigeo_to_dept, _ubigeo_to_prov, _hierarchy
 
 ubigeo_names, ubigeo_to_dept, ubigeo_to_prov, hierarchy = _load_geo_data()
+null_votes_df = _load_null_votes_data()
 
 TODOS = "— Todos —"
 
-col_dep, col_prov, col_dist = st.columns(3)
+active_tab = st.sidebar.radio("Vista", ["Simulación Monte Carlo", "Votos Nulos"], label_visibility="collapsed")
+st.sidebar.markdown("---")
 
-with col_dep:
-    dept_sel = st.selectbox("Departamento", [TODOS] + sorted(hierarchy.keys()))
-
-with col_prov:
-    if dept_sel == TODOS:
-        st.selectbox("Provincia", [TODOS], disabled=True)
-        prov_sel = TODOS
-    else:
-        provs = [TODOS] + sorted(hierarchy.get(dept_sel, {}).keys())
-        prov_sel = st.selectbox("Provincia", provs)
-
-with col_dist:
-    if prov_sel == TODOS:
-        st.selectbox("Distrito", [TODOS], disabled=True)
-        dist_sel = TODOS
-        dist_ubigeo = None
-    else:
-        pairs = hierarchy.get(dept_sel, {}).get(prov_sel, [])
-        dist_options = [TODOS] + [name for name, _ in pairs]
-        dist_sel = st.selectbox("Distrito", dist_options)
-        dist_ubigeo = next((uid for name, uid in pairs if name == dist_sel), None)
-
-n_simulations    = st.sidebar.number_input("Simulaciones", min_value=500, max_value=2000, value=500, step=100)
-confidence_level = st.sidebar.slider("Nivel de confianza", 0.80, 0.99, 0.95, step=0.01)
-prior_option     = st.sidebar.selectbox("Prior", ["flat", "jeffreys"])
-votes_per_acta   = st.sidebar.number_input(
-    "Votos por acta",
-    min_value=150, max_value=300, value=220, step=1,
-    help="Número estimado de votos por acta electoral. Se usa para calcular los votos pendientes en distritos sin datos (votos estimados = actas pendientes × este valor).",
-)
-
-if st.button("Ejecutar simulación"):
-    # Collect ubigeo IDs based on selection level — all from output.json directly
-    if dist_sel != TODOS and dist_ubigeo:
-        ids = [dist_ubigeo]
-    elif prov_sel != TODOS:
-        ids = [uid for _, uid in hierarchy.get(dept_sel, {}).get(prov_sel, [])]
-    elif dept_sel != TODOS:
-        ids = [uid for pairs in hierarchy.get(dept_sel, {}).values() for _, uid in pairs]
-    else:
-        ids = [uid for dept_provs in hierarchy.values() for pairs in dept_provs.values() for _, uid in pairs]
-
-    if not ids:
-        st.error("No se encontraron ubigeos para esta selección.")
-        st.stop()
-
-    zone_label = (
-        dist_sel if dist_sel != TODOS else
-        prov_sel if prov_sel != TODOS else
-        dept_sel if dept_sel != TODOS else
-        "Nacional"
+if active_tab == "Simulación Monte Carlo":
+    n_simulations    = st.sidebar.number_input("Simulaciones", min_value=500, max_value=2000, value=500, step=100)
+    confidence_level = st.sidebar.slider("Nivel de confianza", 0.80, 0.99, 0.95, step=0.01)
+    prior_option     = st.sidebar.selectbox("Prior", ["flat", "jeffreys"])
+    votes_per_acta   = st.sidebar.number_input(
+        "Votos por acta",
+        min_value=150, max_value=300, value=220, step=1,
+        help="Número estimado de votos por acta electoral. Se usa para calcular los votos pendientes en distritos sin datos (votos estimados = actas pendientes × este valor).",
+    )
+else:
+    nulos_threshold = st.sidebar.slider(
+        "Umbral % votos nulos",
+        min_value=0.0, max_value=20.0, value=5.0, step=0.5,
+        help="Mostrar distritos cuyo porcentaje de votos nulos supera este umbral.",
     )
 
-    if dist_sel == TODOS:
-        if prov_sel != TODOS:
-            geo_grouping = "district"
-        elif dept_sel != TODOS:
-            geo_grouping = "province"
-        else:
-            geo_grouping = "department"
-    else:
-        geo_grouping = "none"
+if active_tab == "Simulación Monte Carlo":
+    col_dep, col_prov, col_dist = st.columns(3)
 
-    _sim_fn = _run_simulation_cached if dist_sel == TODOS else run_simulation
-    with st.spinner("Ejecutando simulación Monte Carlo…"):
-        result, estimated, truly_skipped, fetch_failures, breakdown = _sim_fn(
-            ids=tuple(ids),
-            n_simulations=int(n_simulations),
-            confidence_level=confidence_level,
-            prior=prior_option,
-            votes_per_acta=int(votes_per_acta),
-            compute_breakdown=dist_sel == TODOS and int(n_simulations) <= 1000,
-            geo_grouping=geo_grouping,
+    with col_dep:
+        dept_sel = st.selectbox("Departamento", [TODOS] + sorted(hierarchy.keys()))
+
+    with col_prov:
+        if dept_sel == TODOS:
+            st.selectbox("Provincia", [TODOS], disabled=True)
+            prov_sel = TODOS
+        else:
+            provs = [TODOS] + sorted(hierarchy.get(dept_sel, {}).keys())
+            prov_sel = st.selectbox("Provincia", provs)
+
+    with col_dist:
+        if prov_sel == TODOS:
+            st.selectbox("Distrito", [TODOS], disabled=True)
+            dist_sel = TODOS
+            dist_ubigeo = None
+        else:
+            pairs = hierarchy.get(dept_sel, {}).get(prov_sel, [])
+            dist_options = [TODOS] + [name for name, _ in pairs]
+            dist_sel = st.selectbox("Distrito", dist_options)
+            dist_ubigeo = next((uid for name, uid in pairs if name == dist_sel), None)
+
+    if st.button("Ejecutar simulación", key="run_sim"):
+        # Collect ubigeo IDs based on selection level — all from output.json directly
+        if dist_sel != TODOS and dist_ubigeo:
+            ids = [dist_ubigeo]
+        elif prov_sel != TODOS:
+            ids = [uid for _, uid in hierarchy.get(dept_sel, {}).get(prov_sel, [])]
+        elif dept_sel != TODOS:
+            ids = [uid for pairs in hierarchy.get(dept_sel, {}).values() for _, uid in pairs]
+        else:
+            ids = [uid for dept_provs in hierarchy.values() for pairs in dept_provs.values() for _, uid in pairs]
+
+        if not ids:
+            st.error("No se encontraron ubigeos para esta selección.")
+            st.stop()
+
+        zone_label = (
+            dist_sel if dist_sel != TODOS else
+            prov_sel if prov_sel != TODOS else
+            dept_sel if dept_sel != TODOS else
+            "Nacional"
         )
 
-    if result is None:
-        st.error("Sin datos utilizables para esta zona — todos los distritos fueron omitidos y no se pudo inferir una distribución provincial.")
-        st.stop()
+        if dist_sel == TODOS:
+            if prov_sel != TODOS:
+                geo_grouping = "district"
+            elif dept_sel != TODOS:
+                geo_grouping = "province"
+            else:
+                geo_grouping = "department"
+        else:
+            geo_grouping = "none"
 
-    ci_pct = int(result.confidence_level * 100)
+        _sim_fn = _run_simulation_cached if dist_sel == TODOS else run_simulation
+        with st.spinner("Ejecutando simulación Monte Carlo…"):
+            result, estimated, truly_skipped, fetch_failures, breakdown = _sim_fn(
+                ids=tuple(ids),
+                n_simulations=int(n_simulations),
+                confidence_level=confidence_level,
+                prior=prior_option,
+                votes_per_acta=int(votes_per_acta),
+                compute_breakdown=dist_sel == TODOS and int(n_simulations) <= 1000,
+                geo_grouping=geo_grouping,
+            )
 
-    st.subheader(f"Resultados — {zone_label}")
+        if result is None:
+            st.error("Sin datos utilizables para esta zona — todos los distritos fueron omitidos y no se pudo inferir una distribución provincial.")
+            st.stop()
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Votos contabilizados", f"{result.votes_counted:,}")
-    col2.metric("Votos restantes",      f"{result.votes_remaining:,}")
-    col3.metric("Total de votos",       f"{result.total_votes:,}")
-    col4.metric("% contabilizado",      f"{result.pct_counted:.1%}")
+        ci_pct = int(result.confidence_level * 100)
 
-    rows = []
-    for c in result.candidates:
-        proj_votes = int(c.projected_share * result.total_votes)
-        additional = proj_votes - c.votes_counted
-        rows.append({
-            "Candidato":                  c.name,
-            "Votos contabilizados":       c.votes_counted,
-            "Porcentaje actual":          c.current_share,
-            "Porcentaje proyectado":      c.projected_share,
-            f"IC inferior ({ci_pct}%)":   c.ci_low,
-            f"IC superior ({ci_pct}%)":   c.ci_high,
-            "Prob. de victoria":          c.win_probability,
-            "Votos proyectados":          proj_votes,
-            "Votos adicionales":          additional,
-        })
+        st.subheader(f"Resultados — {zone_label}")
 
-    df = pd.DataFrame(rows)
-    pct_cols = ["Porcentaje actual", "Porcentaje proyectado", f"IC inferior ({ci_pct}%)", f"IC superior ({ci_pct}%)", "Prob. de victoria"]
-    int_cols = ["Votos contabilizados", "Votos proyectados", "Votos adicionales"]
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Votos contabilizados", f"{result.votes_counted:,}")
+        col2.metric("Votos restantes",      f"{result.votes_remaining:,}")
+        col3.metric("Total de votos",       f"{result.total_votes:,}")
+        col4.metric("% contabilizado",      f"{result.pct_counted:.1%}")
 
-    # Custom styling for 'Porcentaje proyectado' and 'Prob. de victoria' to show red text, no background
-    def style_red_text(val):
-        return "color: red;"  # Only red text, no background
+        rows = []
+        for c in result.candidates:
+            proj_votes = int(c.projected_share * result.total_votes)
+            additional = proj_votes - c.votes_counted
+            rows.append({
+                "Candidato":                  c.name,
+                "Votos contabilizados":       c.votes_counted,
+                "Porcentaje actual":          c.current_share,
+                "Porcentaje proyectado":      c.projected_share,
+                f"IC inferior ({ci_pct}%)":   c.ci_low,
+                f"IC superior ({ci_pct}%)":   c.ci_high,
+                "Prob. de victoria":          c.win_probability,
+                "Votos proyectados":          proj_votes,
+                "Votos adicionales":          additional,
+            })
 
-    styled_df = (
-        df.set_index("Candidato").style
-            .format({col: "{:.2%}" for col in pct_cols})
-            .format({col: "{:,}"   for col in int_cols})
+        df = pd.DataFrame(rows)
+        pct_cols = ["Porcentaje actual", "Porcentaje proyectado", f"IC inferior ({ci_pct}%)", f"IC superior ({ci_pct}%)", "Prob. de victoria"]
+        int_cols = ["Votos contabilizados", "Votos proyectados", "Votos adicionales"]
+
+        # Custom styling for 'Porcentaje proyectado' and 'Prob. de victoria' to show red text, no background
+        def style_red_text(val):
+            return "color: red;"  # Only red text, no background
+
+        styled_df = (
+            df.set_index("Candidato").style
+                .format({col: "{:.2%}" for col in pct_cols})
+                .format({col: "{:,}"   for col in int_cols})
+        )
+
+        st.dataframe(styled_df, use_container_width=True)
+
+        winner = result.projected_winner
+        st.success(
+            f"**Ganador proyectado:** {winner.name} — "
+            f"probabilidad de victoria {winner.win_probability:.1%}, "
+            f"porcentaje proyectado {winner.projected_share:.2%}"
+        )
+
+        # ── Desglose geográfico ──────────────────────────────────────────────────
+        if breakdown:
+            geo_label, breakdown_rows = breakdown
+            with st.expander(f"Desglose por {geo_label.lower()} ({len(breakdown_rows)})"):
+                bdf = pd.DataFrame(breakdown_rows).set_index(geo_label)
+                pct_b = ["% contabilizado"]
+                int_b = ["Votos contabilizados", "Total votos"] + [c for c in bdf.columns if "proy." in c or "adic." in c]
+                st.dataframe(
+                    bdf.style
+                        .format({col: "{:.1%}" for col in pct_b})
+                        .format({col: "{:,}"   for col in int_b}),
+                    use_container_width=True,
+                )
+
+        if estimated:
+            with st.expander(f"Distritos estimados con distribución provincial ({len(estimated)})"):
+                st.write(
+                    "Estos distritos no tenían votos contabilizados. "
+                    "Sus totales de votos fueron estimados con `votasRestantesEstimadoConActas` "
+                    "y su distribución fue inferida de los distritos válidos de la misma provincia o departamento."
+                )
+                st.dataframe(pd.DataFrame(estimated), use_container_width=True, hide_index=True)
+
+        if truly_skipped:
+            with st.expander(f"Distritos excluidos completamente ({len(truly_skipped)} — sin datos provinciales disponibles)"):
+                st.write(
+                    "Estos distritos no tenían datos válidos ni agregado provincial del cual inferir, "
+                    "por lo que fueron excluidos de la simulación."
+                )
+                st.dataframe(pd.DataFrame(truly_skipped), use_container_width=True, hide_index=True)
+
+        if fetch_failures:
+            with st.expander(f"Distritos no encontrados en el bundle ({len(fetch_failures)})"):
+                st.write("Estos distritos no fueron encontrados en el bundle de datos y fueron excluidos.")
+                st.dataframe(pd.DataFrame(fetch_failures), use_container_width=True, hide_index=True)
+
+
+# ── Vista: Votos Nulos ───────────────────────────────────────────────────────
+if active_tab == "Votos Nulos":
+    global_mean_pct = null_votes_df["% nulos"].mean()
+
+    filtered = null_votes_df[null_votes_df["% nulos"] > nulos_threshold].copy()
+    filtered["Votos para llegar a la media"] = (
+        filtered["Votos nulos"] - (global_mean_pct / 100) * filtered["Votos emitidos"]
+    ).clip(lower=0).round().astype(int)
+
+    # ── Aggregate table ───────────────────────────────────────────────────────
+    st.subheader(f"Resumen — distritos con votos nulos > {nulos_threshold:.1f}%")
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Distritos", f"{len(filtered):,}")
+    m2.metric("% del total", f"{len(filtered)/len(null_votes_df)*100:.1f}%")
+    m3.metric("Media nacional % nulos", f"{global_mean_pct:.2f}%")
+    m4.metric("Media filtrada % nulos", f"{filtered['% nulos'].mean():.2f}%" if len(filtered) else "—")
+
+    agg = (
+        filtered.groupby("Líder")
+        .agg(
+            Distritos=("Distrito", "count"),
+            Votos_nulos_total=("Votos nulos", "sum"),
+            Votos_emitidos_total=("Votos emitidos", "sum"),
+        )
+        .assign(**{"% nulos promedio": lambda d: d["Votos_nulos_total"] / d["Votos_emitidos_total"] * 100})
+        .sort_values("Distritos", ascending=False)
+        .rename(columns={"Votos_nulos_total": "Votos nulos (total)", "Votos_emitidos_total": "Votos emitidos (total)"})
+    )
+    agg["% distritos"] = agg["Distritos"] / agg["Distritos"].sum() * 100
+
+    st.dataframe(
+        agg.style
+            .format({"% nulos promedio": "{:.2f}%", "% distritos": "{:.1f}%",
+                     "Votos nulos (total)": "{:,}", "Votos emitidos (total)": "{:,}"}),
+        use_container_width=True,
     )
 
-    st.dataframe(styled_df, use_container_width=True)
-
-    winner = result.projected_winner
-    st.success(
-        f"**Ganador proyectado:** {winner.name} — "
-        f"probabilidad de victoria {winner.win_probability:.1%}, "
-        f"porcentaje proyectado {winner.projected_share:.2%}"
+    # ── District-level table ──────────────────────────────────────────────────
+    st.subheader(f"Detalle por distrito ({len(filtered):,} distritos)")
+    st.caption(
+        f"**Votos para llegar a la media**: cuántos votos nulos habría que reclasificar "
+        f"para que el distrito iguale la media nacional de {global_mean_pct:.2f}%."
     )
 
-    # ── Desglose geográfico ──────────────────────────────────────────────────
-    if breakdown:
-        geo_label, breakdown_rows = breakdown
-        with st.expander(f"Desglose por {geo_label.lower()} ({len(breakdown_rows)})"):
-            bdf = pd.DataFrame(breakdown_rows).set_index(geo_label)
-            pct_b = ["% contabilizado"]
-            int_b = ["Votos contabilizados", "Total votos"] + [c for c in bdf.columns if "proy." in c or "adic." in c]
-            st.dataframe(
-                bdf.style
-                    .format({col: "{:.1%}" for col in pct_b})
-                    .format({col: "{:,}"   for col in int_b}),
-                use_container_width=True,
-            )
+    detail_cols = [
+        "Departamento", "Provincia", "Distrito",
+        "Votos emitidos", "Votos nulos", "% nulos",
+        "Votos para llegar a la media", "Líder",
+    ]
+    detail_df = filtered[detail_cols].sort_values("% nulos", ascending=False)
 
-    if estimated:
-        with st.expander(f"Distritos estimados con distribución provincial ({len(estimated)})"):
-            st.write(
-                "Estos distritos no tenían votos contabilizados. "
-                "Sus totales de votos fueron estimados con `votasRestantesEstimadoConActas` "
-                "y su distribución fue inferida de los distritos válidos de la misma provincia o departamento."
-            )
-            st.dataframe(pd.DataFrame(estimated), use_container_width=True, hide_index=True)
-
-    if truly_skipped:
-        with st.expander(f"Distritos excluidos completamente ({len(truly_skipped)} — sin datos provinciales disponibles)"):
-            st.write(
-                "Estos distritos no tenían datos válidos ni agregado provincial del cual inferir, "
-                "por lo que fueron excluidos de la simulación."
-            )
-            st.dataframe(pd.DataFrame(truly_skipped), use_container_width=True, hide_index=True)
-
-    if fetch_failures:
-        with st.expander(f"Distritos no encontrados en el bundle ({len(fetch_failures)})"):
-            st.write("Estos distritos no fueron encontrados en el bundle de datos y fueron excluidos.")
-            st.dataframe(pd.DataFrame(fetch_failures), use_container_width=True, hide_index=True)
-    
+    st.dataframe(
+        detail_df.style
+            .format({"% nulos": "{:.2f}%", "Votos emitidos": "{:,}",
+                     "Votos nulos": "{:,}", "Votos para llegar a la media": "{:,}"}),
+        use_container_width=True,
+        hide_index=True,
+    )
