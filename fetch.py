@@ -14,6 +14,12 @@ SESSION.headers.update({
     "Sec-Fetch-Site":            "none",
     "Upgrade-Insecure-Requests": "1",
 })
+SESSION.cookies.update({
+    "_ga":              "GA1.1.1273837598.1775585178",
+    "_clck":            "6irwt3%5E2%5Eg50%5E0%5E2288",
+    "_ga_S91LMCFR6G":  "GS2.1.s1775585177$o1$g0$t1775585182$j55$l0$h1160757708",
+    "_ga_7X9XC2V582":  "GS2.1.s1776255608$o26$g1$t1776255609$j59$l0$h1574047447",
+})
 
 BASE = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend"
 PARTICIPANTES_URL = BASE + "/eleccion-presidencial/participantes-ubicacion-geografica-nombre?tipoFiltro=ubigeo_nivel_03&idAmbitoGeografico={ambito}&ubigeoNivel1={dep}&ubigeoNivel2={prov}&ubigeoNivel3={dist}&idEleccion=10"
