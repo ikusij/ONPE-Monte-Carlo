@@ -1,6 +1,15 @@
+import argparse
 import json
 import time
-from fetch import format_data
+from fetch import format_data, set_proxy
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--proxy", metavar="IP", help="Proxy IP address, e.g. 152.228.134.212")
+args = parser.parse_args()
+
+if args.proxy:
+    set_proxy(args.proxy)
+    print(f"Using proxy: {args.proxy}")
 
 with open("hierarchy.json", "r", encoding="utf-8") as f:
     output = json.load(f)

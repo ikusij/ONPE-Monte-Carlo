@@ -1,4 +1,3 @@
-import time
 import requests
 
 SESSION = requests.Session()
@@ -38,9 +37,13 @@ def _ubigeos(ubigeo_distrito: int | str) -> dict[str, str]:
     return ubigeos
 
 
+def set_proxy(ip: str) -> None:
+    proxy = f"http://{ip}"
+    SESSION.proxies.update({"http": proxy, "https": proxy})
+
+
 def _get(url: str, **ubigeo_kwargs) -> dict:
-    final_url = url.format(**ubigeo_kwargs) + f"&_t={int(time.time())}"
-    rsp = SESSION.get(final_url, timeout=10, headers={"Cache-Control": "no-cache", "Pragma": "no-cache"})
+    rsp = SESSION.get(url.format(**ubigeo_kwargs), timeout=1)
     rsp.raise_for_status()
     return rsp.json()
 
