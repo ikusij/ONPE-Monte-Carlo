@@ -2105,9 +2105,104 @@ Fetching 2102 districts...
 
 Done. 2102 fetched, 0 still failed after 1 attempt(s).
 Adding timeseries...
-Traceback (most recent call last):
-  File "/Users/ivokusijanovic/ONPE/run_simulation.py", line 7, in <module>
-    from monte_carlo import MonteCarloConfig, monte_carlo_simulation, aggregate_province, print_results, make_synthetic_result
-  File "/Users/ivokusijanovic/ONPE/monte_carlo.py", line 1, in <module>
-    import numpy as np
-ModuleNotFoundError: No module named 'numpy'
+Loading bundle.json...
+Running simulation over 2102 districts (1,000 simulations each)...
+[skip] 022002: no votes counted.
+[skip] 022005: no votes counted.
+[skip] 022006: no votes counted.
+[skip] 022007: no votes counted.
+[skip] 022008: no votes counted.
+[skip] 022010: no votes counted.
+  200/2102 districts processed (6 skipped so far)...
+  400/2102 districts processed (6 skipped so far)...
+  600/2102 districts processed (6 skipped so far)...
+[skip] 070917: no votes counted.
+[skip] 070909: no votes counted.
+[skip] 070918: no votes counted.
+[skip] 070915: no votes counted.
+[skip] 070910: no votes counted.
+[skip] 070919: no votes counted.
+[skip] 070913: no votes counted.
+[skip] 070912: no votes counted.
+  800/2102 districts processed (14 skipped so far)...
+  1000/2102 districts processed (14 skipped so far)...
+[skip] 100505: no votes counted.
+  1200/2102 districts processed (15 skipped so far)...
+  1400/2102 districts processed (15 skipped so far)...
+[skip] 150411: no votes counted.
+  1600/2102 districts processed (16 skipped so far)...
+  1800/2102 districts processed (16 skipped so far)...
+[skip] 911201: no votes counted.
+[skip] 920224: no votes counted.
+[skip] 920204: no votes counted.
+[skip] 920208: no votes counted.
+[skip] 921026: no votes counted.
+[skip] 921102: no votes counted.
+[skip] 921324: no votes counted.
+[skip] 922403: no votes counted.
+[skip] 922802: no votes counted.
+[skip] 931904: no votes counted.
+[skip] 933801: no votes counted.
+[skip] 933702: no votes counted.
+[skip] 933701: no votes counted.
+  2000/2102 districts processed (29 skipped so far)...
+[skip] 932401: no votes counted.
+[skip] 930603: no votes counted.
+[skip] 930602: no votes counted.
+[skip] 930720: no votes counted.
+[skip] 930703: no votes counted.
+[skip] 931302: no votes counted.
+[skip] 932801: no votes counted.
+[skip] 930801: no votes counted.
+[skip] 940909: no votes counted.
+[skip] 940913: no votes counted.
+[skip] 940905: no votes counted.
+[skip] 940915: no votes counted.
+[skip] 940922: no votes counted.
+[skip] 940917: no votes counted.
+[skip] 941101: no votes counted.
+[skip] 941103: no votes counted.
+[skip] 941106: no votes counted.
+[skip] 941110: no votes counted.
+[skip] 941301: no votes counted.
+[skip] 941717: no votes counted.
+[skip] 941707: no votes counted.
+[skip] 941748: no votes counted.
+[skip] 943701: no votes counted.
+[skip] 944202: no votes counted.
+[skip] 942910: no votes counted.
+  2102/2102 districts processed (54 skipped so far)...
+
+Aggregating 2096 results (48 synthetic from 54 skipped districts)...
+
+======================================================================
+  MONTE CARLO ELECTION SIMULATION  —  1,000 runs
+======================================================================
+  Votes counted  : 18,655,492  (92.4% of total)
+  Votes remaining: 1,530,133
+  Total votes    : 20,185,625
+  Prior (δ)      : 1.0
+  Credible int.  : 95%
+
+  Candidate                                      Current  Projected               95% CI  Win prob  Proj. votes  Additional
+  --------------------------------------------- -------- ---------- -------------------- --------- ------------ -----------
+  KEIKO SOFIA FUJIMORI HIGUCHI                    14.22%     14.28%     [14.28%, 14.29%]   100.0%    2,883,025    +231,082 ◀
+  VOTOS EN BLANCO                                 11.61%     11.78%     [11.77%, 11.78%]     0.0%    2,377,167    +210,508
+  ROBERTO HELBERT SANCHEZ PALOMINO                10.05%      9.98%       [9.98%, 9.98%]     0.0%    2,015,027    +140,034
+  RAFAEL BERNARDO LÓPEZ ALIAGA CAZORLA             9.89%      9.92%       [9.92%, 9.92%]     0.0%    2,002,681    +157,700
+  JORGE NIETO MONTESINOS                           9.22%      9.14%       [9.13%, 9.14%]     0.0%    1,844,385    +124,145
+  RICARDO PABLO BELMONT CASSINELLI                 8.46%      8.43%       [8.43%, 8.43%]     0.0%    1,701,601    +122,589
+  CARLOS GONSALO ALVAREZ LOAYZA                    6.56%      6.60%       [6.59%, 6.60%]     0.0%    1,331,666    +108,306
+  PABLO ALFONSO LOPEZ CHAU NAVA                    6.13%      6.08%       [6.07%, 6.08%]     0.0%    1,226,338     +82,469
+  VOTOS NULOS                                      5.00%      5.01%       [5.01%, 5.02%]     0.0%    1,012,307     +78,880
+  MARIA SOLEDAD PEREZ TELLO                        2.86%      2.84%       [2.84%, 2.84%]     0.0%      573,710     +39,752
+  ... (28 more candidates)
+
+  Projected winner: KEIKO SOFIA FUJIMORI HIGUCHI
+  Win probability : 100.0%
+  Projected votes : 2,883,025  (+231,082 additional)
+======================================================================
+
+
+Saved snapshot '2026-04-15 22:51' → timeseries.csv
+Committing and pushing bundle.json...
