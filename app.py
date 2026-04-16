@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 import altair as alt
 import numpy as np
 import pandas as pd
@@ -7,8 +8,6 @@ import streamlit as st
 
 from monte_carlo import (
     MonteCarloConfig,
-    CandidateResult,
-    SimulationResult,
     monte_carlo_simulation,
     aggregate_province,
     make_synthetic_result,
@@ -268,6 +267,13 @@ elif active_tab == "Votos Nulos":
     )
 
 if active_tab == "Simulación Monte Carlo":
+    bundle_mtime = datetime.fromtimestamp(os.path.getmtime("bundle.json"))
+    st.warning(
+        f"⚠️ Los datos de distritos no han cambiado desde las **{bundle_mtime.strftime('%H:%M')}** "
+        f"({bundle_mtime.strftime('%d/%m/%Y')}). La API de ONPE no refleja los últimos resultados — "
+        f"las proyecciones pueden no ser confiables."
+    )
+
     col_dep, col_prov, col_dist = st.columns(3)
 
     with col_dep:
