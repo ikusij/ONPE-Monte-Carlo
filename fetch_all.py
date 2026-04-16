@@ -7,16 +7,17 @@ reset_session()
 with open("hierarchy.json", "r", encoding="utf-8") as f:
     output = json.load(f)
 
-all_provinces = list(dict.fromkeys(
-    str(prov["ubigeo"])
+all_ubigeos = list(dict.fromkeys(
+    str(dist["ubigeo"])
     for dept in output
     for prov in dept.get("provincias", [])
+    for dist in prov.get("distritos", [])
 ))
 
-print(f"Fetching {len(all_provinces)} provinces...")
+print(f"Fetching {len(all_ubigeos)} districts...")
 
 bundle = {}
-failed = all_provinces
+failed = all_ubigeos
 
 MAX_RETRIES = 5
 attempt = 0
@@ -24,17 +25,17 @@ attempt = 0
 while failed and attempt < MAX_RETRIES:
     attempt += 1
     if attempt > 1:
-        print(f"\nRetry {attempt}/{MAX_RETRIES} — {len(failed)} provinces remaining...")
+        print(f"\nRetry {attempt}/{MAX_RETRIES} — {len(failed)} districts remaining...")
         time.sleep(2)
 
     next_failed = []
-    for i, prov_ubigeo in enumerate(failed, 1):
+    for i, ubigeo in enumerate(failed, 1):
         try:
-            bundle[prov_ubigeo] = format_data(prov_ubigeo)
-            print(f"[{i}/{len(failed)}] {prov_ubigeo} OK")
+            bundle[ubigeo] = format_data(ubigeo)
+            print(f"[{i}/{len(failed)}] {ubigeo} OK")
         except Exception as e:
-            next_failed.append(prov_ubigeo)
-            print(f"[{i}/{len(failed)}] {prov_ubigeo} FAILED: {e}")
+            next_failed.append(ubigeo)
+            print(f"[{i}/{len(failed)}] {ubigeo} FAILED: {e}")
         time.sleep(0.05)
 
     failed = next_failed
