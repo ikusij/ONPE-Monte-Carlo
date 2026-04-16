@@ -25,8 +25,8 @@ def reset_session() -> None:
     SESSION = _new_session()
 
 BASE = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend"
-PARTICIPANTES_PROV_URL = BASE + "/eleccion-presidencial/participantes-ubicacion-geografica-nombre?tipoFiltro=ubigeo_nivel_02&idAmbitoGeografico={ambito}&ubigeoNivel1={dep}&ubigeoNivel2={prov}&idEleccion=10"
-TOTALES_PROV_URL       = BASE + "/resumen-general/totales?idAmbitoGeografico={ambito}&idEleccion=10&tipoFiltro=ubigeo_nivel_02&idUbigeoDepartamento={dep}&idUbigeoProvincia={prov}"
+PARTICIPANTES_URL = BASE + "/eleccion-presidencial/participantes-ubicacion-geografica-nombre?tipoFiltro=ubigeo_nivel_03&idAmbitoGeografico={ambito}&ubigeoNivel1={dep}&ubigeoNivel2={prov}&ubigeoNivel3={dist}&idEleccion=10"
+TOTALES_URL       = BASE + "/resumen-general/totales?idAmbitoGeografico={ambito}&idEleccion=10&tipoFiltro=ubigeo_nivel_03&idUbigeoDepartamento={dep}&idUbigeoProvincia={prov}&idUbigeoDistrito={dist}"
 
 TOTALES_DROP_KEYS = {
     "idUbigeoDepartamento", "idUbigeoProvincia", "idUbigeoDistrito",
@@ -34,13 +34,16 @@ TOTALES_DROP_KEYS = {
 }
 
 
-def _province_ubigeos(ubigeo_provincia: str) -> dict[str, str]:
-    p = int(ubigeo_provincia)
-    return {
-        "dep":    str(p // 10000 * 10000),
-        "prov":   ubigeo_provincia,
-        "ambito": "2" if p >= 260000 else "1",
+def _ubigeos(ubigeo_distrito: int | str) -> dict[str, str]:
+    distrito = int(ubigeo_distrito)
+    ubigeos = {
+        "dep":  str(distrito // 10000 * 10000),
+        "prov": str(distrito // 100 * 100),
+        "dist": str(distrito),
     }
+    # Add ambito geografico rule
+    ubigeos["ambito"] = "2" if distrito >= 260000 else "1"
+    return ubigeos
 
 
 def _get(url: str, **ubigeo_kwargs) -> dict:
@@ -50,32 +53,42 @@ def _get(url: str, **ubigeo_kwargs) -> dict:
     return rsp.json()
 
 
-def format_data(ubigeo_provincia: str) -> dict:
-    ub = _province_ubigeos(ubigeo_provincia)
-
-    totales_raw      = _get(TOTALES_PROV_URL, **ub).get("data", {})
-    totales          = {k: v for k, v in totales_raw.items() if k not in TOTALES_DROP_KEYS}
-    participantes    = _get(PARTICIPANTES_PROV_URL, **ub).get("data", [])
+def load_participantes(ubigeo_distrito: int | str) -> dict[str, int]:
+    ub = _ubigeos(ubigeo_distrito)
+    participantes = _get(PARTICIPANTES_URL, **ub).get("data", [])
 
     candidatos = {
         (p["nombreCandidato"] or "VOTOS NULOS"): p.get("totalVotosValidos", 0)
         for p in participantes
     }
+    return candidatos
 
-    votos_emitidos       = totales.get("totalVotosEmitidos", 0)
-    actas_contabilizadas = totales.get("actasContabilizadas", 0)
+
+def load_totales(ubigeo_distrito: int | str) -> dict:
+    ub = _ubigeos(ubigeo_distrito)
+    data = _get(TOTALES_URL, **ub).get("data", {})
+    return {k: v for k, v in data.items() if k not in TOTALES_DROP_KEYS}
+
+
+def format_data(ubigeo_distrito: int | str) -> dict:
+    totales     = load_totales(ubigeo_distrito)
+    candidatos  = load_participantes(ubigeo_distrito)
+
+    votos_emitidos        = totales.get("totalVotosEmitidos", 0)
+    actas_contabilizadas  = totales.get("actasContabilizadas", 0)
 
     votos_restantes = (
         int(votos_emitidos * (100 / actas_contabilizadas - 1))
         if actas_contabilizadas else 0
     )
 
-    candidatos["VOTOS EN BLANCO"] = max(0, votos_emitidos - sum(candidatos.values()))
+    suma_votos_validos        = sum(candidatos.values())
+    candidatos["VOTOS EN BLANCO"] = max(0, votos_emitidos - suma_votos_validos)
 
     return {
-        "ubigeo_distrito": ubigeo_provincia,
-        "pendientesJee":   totales.get("pendientesJee", 0),
-        "votosEmitidos":   votos_emitidos,
-        "votosRestantes":  votos_restantes,
-        "candidatos":      candidatos,
+        "ubigeo_distrito": ubigeo_distrito,
+        "pendientesJee":  totales.get("pendientesJee", 0),
+        "votosEmitidos":  votos_emitidos,
+        "votosRestantes": votos_restantes,
+        "candidatos":     candidatos,
     }

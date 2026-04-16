@@ -29,13 +29,12 @@ def run_simulation(
     prior: str,
     votes_per_acta: int,
     compute_breakdown: bool = False,
-    geo_grouping: str = "none",   # "province" | "department" | "none"
+    geo_grouping: str = "none",   # "district" | "province" | "department" | "none"
 ):
-    unique_ids = list(dict.fromkeys(ids))
-    data = [bundle[uid] for uid in unique_ids if uid in bundle]
+    data = [bundle[uid] for uid in ids if uid in bundle]
     fetch_failures = [
-        {"Ubigeo": uid, "Provincia": uid, "Error": "No encontrado en el bundle"}
-        for uid in unique_ids if uid not in bundle
+        {"Ubigeo": uid, "Distrito": uid, "Error": "No encontrado en el bundle"}
+        for uid in ids if uid not in bundle
     ]
 
     if not data:
@@ -91,7 +90,7 @@ def run_simulation(
         synthetic = make_synthetic_result(fallback_agg, total_votes)
         row = {
             "Ubigeo":             ubigeo_str,
-            "Provincia":          ubigeo_names.get(ubigeo_str, "—"),
+            "Distrito":           ubigeo_names.get(ubigeo_str, "—"),
             "Motivo":             _skip_reason(d),
             "Distribución usada": fallback_label or "—",
             "Votos est. (actas)": total_votes,
@@ -112,9 +111,12 @@ def run_simulation(
     # Compute geographic breakdown before freeing raw arrays
     breakdown = None
     if compute_breakdown and geo_grouping != "none":
-        if geo_grouping == "province":
-            geo_label = "Provincia"
+        if geo_grouping == "district":
+            geo_label = "Distrito"
             key_fn = lambda uid: ubigeo_names.get(uid, uid)
+        elif geo_grouping == "province":
+            geo_label = "Provincia"
+            key_fn = lambda uid: ubigeo_to_prov.get(uid, uid)
         else:
             geo_label = "Departamento"
             key_fn = lambda uid: ubigeo_to_dept.get(uid, uid)
@@ -180,31 +182,34 @@ def _load_null_votes_data() -> pd.DataFrame:
     ubigeo_to_geo: dict[str, dict] = {}
     for dept in _output:
         for prov in dept.get("provincias", []):
-            ubigeo_to_geo[str(prov["ubigeo"])] = {
-                "Departamento": dept["nombre"],
-                "Provincia":    prov["nombre"],
-            }
+            for dist in prov.get("distritos", []):
+                ubigeo_to_geo[str(dist["ubigeo"])] = {
+                    "Departamento": dept["nombre"],
+                    "Provincia":    prov["nombre"],
+                    "Distrito":     dist["nombre"],
+                }
 
     excluded = {"VOTOS NULOS", "VOTOS EN BLANCO"}
     rows = []
-    for ubigeo, province in bundle.items():
-        emitidos = province.get("votosEmitidos", 0)
+    for ubigeo, district in bundle.items():
+        emitidos = district.get("votosEmitidos", 0)
         if emitidos == 0:
             continue
-        candidatos = province.get("candidatos", {})
+        candidatos = district.get("candidatos", {})
         nulos = candidatos.get("VOTOS NULOS", 0)
         pct = nulos / emitidos * 100
         valid = {k: v for k, v in candidatos.items() if k not in excluded}
         leader = max(valid, key=lambda k: valid[k]) if valid else "—"
-        geo = ubigeo_to_geo.get(ubigeo, {"Departamento": "—", "Provincia": ubigeo})
+        geo = ubigeo_to_geo.get(ubigeo, {"Departamento": "—", "Provincia": "—", "Distrito": ubigeo})
         rows.append({
-            "Departamento":   geo["Departamento"],
-            "Provincia":      geo["Provincia"],
-            "Ubigeo":         ubigeo,
+            "Departamento":  geo["Departamento"],
+            "Provincia":     geo["Provincia"],
+            "Distrito":      geo["Distrito"],
+            "Ubigeo":        ubigeo,
             "Votos emitidos": emitidos,
-            "Votos nulos":    nulos,
-            "% nulos":        pct,
-            "Líder":          leader,
+            "Votos nulos":   nulos,
+            "% nulos":       pct,
+            "Líder":         leader,
         })
 
     return pd.DataFrame(rows)
@@ -224,17 +229,18 @@ def _load_geo_data() -> tuple[dict, dict, dict, dict]:
         _hierarchy[dept_name] = {}
         for prov in dept.get("provincias", []):
             prov_name = prov["nombre"]
-            prov_uid  = str(prov["ubigeo"])
-            if prov_uid in bundle:
-                # Each district entry maps to the province ubigeo
-                pairs = sorted(
-                    [(d["nombre"], prov_uid) for d in prov.get("distritos", [])],
-                    key=lambda x: x[0],
-                )
-                _hierarchy[dept_name][prov_name] = pairs
-            _ubigeo_names[prov_uid]   = prov_name
-            _ubigeo_to_dept[prov_uid] = dept_name
-            _ubigeo_to_prov[prov_uid] = prov_name
+            pairs = [
+                (d["nombre"], str(d["ubigeo"]))
+                for d in prov.get("distritos", [])
+                if str(d["ubigeo"]) in bundle
+            ]
+            if pairs:
+                _hierarchy[dept_name][prov_name] = sorted(pairs, key=lambda x: x[0])
+            for dist in prov.get("distritos", []):
+                uid = str(dist["ubigeo"])
+                _ubigeo_names[uid]    = dist["nombre"]
+                _ubigeo_to_dept[uid]  = dept_name
+                _ubigeo_to_prov[uid]  = prov_name
     return _ubigeo_names, _ubigeo_to_dept, _ubigeo_to_prov, _hierarchy
 
 ubigeo_names, ubigeo_to_dept, ubigeo_to_prov, hierarchy = _load_geo_data()
@@ -310,7 +316,7 @@ if active_tab == "Simulación Monte Carlo":
 
         if dist_sel == TODOS:
             if prov_sel != TODOS:
-                geo_grouping = "none"
+                geo_grouping = "district"
             elif dept_sel != TODOS:
                 geo_grouping = "province"
             else:
@@ -430,10 +436,10 @@ if active_tab == "Votos Nulos":
     ).clip(lower=0).round().astype(int)
 
     # ── Aggregate table ───────────────────────────────────────────────────────
-    st.subheader(f"Resumen — provincias con votos nulos > {nulos_threshold:.1f}%")
+    st.subheader(f"Resumen — distritos con votos nulos > {nulos_threshold:.1f}%")
 
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Provincias", f"{len(filtered):,}")
+    m1.metric("Distritos", f"{len(filtered):,}")
     m2.metric("% del total", f"{len(filtered)/len(null_votes_df)*100:.1f}%")
     m3.metric("Media nacional % nulos", f"{global_mean_pct:.2f}%")
     m4.metric("Media filtrada % nulos", f"{filtered['% nulos'].mean():.2f}%" if len(filtered) else "—")
@@ -441,36 +447,36 @@ if active_tab == "Votos Nulos":
     agg = (
         filtered.groupby("Líder")
         .agg(
-            Provincias=("Provincia", "count"),
+            Distritos=("Distrito", "count"),
             Votos_nulos_total=("Votos nulos", "sum"),
             Votos_emitidos_total=("Votos emitidos", "sum"),
         )
         .assign(**{"% nulos promedio": lambda d: d["Votos_nulos_total"] / d["Votos_emitidos_total"] * 100})
-        .sort_values("Provincias", ascending=False)
+        .sort_values("Distritos", ascending=False)
         .rename(columns={"Votos_nulos_total": "Votos nulos (total)", "Votos_emitidos_total": "Votos emitidos (total)"})
     )
-    agg["% provincias"] = agg["Provincias"] / agg["Provincias"].sum() * 100
+    agg["% distritos"] = agg["Distritos"] / agg["Distritos"].sum() * 100
     agg["Votos para llegar a la media"] = (
         agg["Votos nulos (total)"] - (global_mean_pct / 100) * agg["Votos emitidos (total)"]
     ).clip(lower=0).round().astype(int)
 
     st.dataframe(
         agg.style
-            .format({"% nulos promedio": "{:.2f}%", "% provincias": "{:.1f}%",
+            .format({"% nulos promedio": "{:.2f}%", "% distritos": "{:.1f}%",
                      "Votos nulos (total)": "{:,}", "Votos emitidos (total)": "{:,}",
                      "Votos para llegar a la media": "{:,}"}),
         use_container_width=True,
     )
 
-    # ── Province-level table ──────────────────────────────────────────────────
-    st.subheader(f"Detalle por provincia ({len(filtered):,} provincias)")
+    # ── District-level table ──────────────────────────────────────────────────
+    st.subheader(f"Detalle por distrito ({len(filtered):,} distritos)")
     st.caption(
         f"**Votos para llegar a la media**: cuántos votos nulos habría que reclasificar "
-        f"para que la provincia iguale la media nacional de {global_mean_pct:.2f}%."
+        f"para que el distrito iguale la media nacional de {global_mean_pct:.2f}%."
     )
 
     detail_cols = [
-        "Departamento", "Provincia",
+        "Departamento", "Provincia", "Distrito",
         "Votos emitidos", "Votos nulos", "% nulos",
         "Votos para llegar a la media", "Líder",
     ]
