@@ -14,7 +14,7 @@ from monte_carlo import (
     make_synthetic_result,
 )
 
-@st.cache_resource(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=1800)
 def _load_bundle() -> dict:
     with open("bundle.json", "r", encoding="utf-8") as f:
         return json.load(f)
@@ -173,7 +173,7 @@ _run_simulation_cached = st.cache_data(show_spinner=False, max_entries=10, ttl=1
 st.set_page_config(page_title="ONPE Probabilidad de Victoria", layout="wide")
 st.title("ONPE — Probabilidad de Victoria Electoral")
 
-@st.cache_resource(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=1800)
 def _load_null_votes_data() -> pd.DataFrame:
     """Pre-compute null vote stats for every district, joined with geo names."""
     with open("hierarchy.json", "r", encoding="utf-8") as f:
@@ -215,7 +215,7 @@ def _load_null_votes_data() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=1800)
 def _load_geo_data() -> tuple[dict, dict, dict, dict]:
     with open("hierarchy.json", "r", encoding="utf-8") as f:
         _output = json.load(f)
