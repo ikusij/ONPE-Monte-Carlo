@@ -268,6 +268,11 @@ elif active_tab == "Votos Nulos":
     )
 
 if active_tab == "Simulación Monte Carlo":
+    st.warning(
+        "⚠️ Los datos de distritos no han cambiado desde las **5:53 AM** del 16/04/2026. "
+        "La API de ONPE no refleja los últimos resultados — las proyecciones pueden no ser confiables."
+    )
+
     col_dep, col_prov, col_dist = st.columns(3)
 
     with col_dep:
