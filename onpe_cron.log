@@ -2206,3 +2206,9 @@ Aggregating 2096 results (48 synthetic from 54 skipped districts)...
 
 Saved snapshot '2026-04-15 22:51' → timeseries.csv
 Committing and pushing bundle.json...
+[main fa1649b] update bundle 2026-04-15 22:52
+ 3 files changed, 140 insertions(+), 7 deletions(-)
+failed to store: -61
+To https://github.com/ikusij/ONPE-Monte-Carlo.git
+   90d1fc6..fa1649b  main -> main
+Done.
