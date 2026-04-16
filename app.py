@@ -269,7 +269,7 @@ elif active_tab == "Votos Nulos":
 if active_tab == "Simulación Monte Carlo":
     bundle_mtime = datetime.fromtimestamp(os.path.getmtime("bundle.json"))
     st.warning(
-        f"⚠️ Los datos de distritos no han cambiado desde las **5:53am** "
+        f"⚠️ Los datos de distritos no han cambiado desde las **{bundle_mtime.strftime('%H:%M')}** "
         f"({bundle_mtime.strftime('%d/%m/%Y')}). La API de ONPE no refleja los últimos resultados — "
         f"las proyecciones pueden no ser confiables."
     )
