@@ -1,28 +1,20 @@
 import time
 import requests
 
-def _new_session() -> requests.Session:
-    s = requests.Session()
-    s.headers.update({
-        "User-Agent":       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
-        "Accept":           "application/json, text/plain, */*",
-        "Accept-Encoding":  "gzip, deflate, br",
-        "Accept-Language":  "en-US,en;q=0.9",
-        "Sec-Ch-Ua":        '"Not.A.Brand";v="24", "Chromium";v="146"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Fetch-Dest":   "empty",
-        "Sec-Fetch-Mode":   "cors",
-        "Sec-Fetch-Site":   "same-origin",
-        "Referer":          "https://resultadoelectoral.onpe.gob.pe/",
-    })
-    return s
-
-SESSION = _new_session()
-
-
-def reset_session() -> None:
-    global SESSION
-    SESSION = _new_session()
+SESSION = requests.Session()
+SESSION.headers.update({
+    "User-Agent":                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
+    "Accept":                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Encoding":           "gzip, deflate, br, zstd",
+    "Accept-Language":           "en-US,en;q=0.9",
+    "Sec-Ch-Ua":                 '"Not.A.Brand";v="24", "Chromium";v="146"',
+    "Sec-Ch-Ua-Mobile":          "?0",
+    "Sec-Ch-Ua-Platform":        '"macOS"',
+    "Sec-Fetch-Dest":            "document",
+    "Sec-Fetch-Mode":            "navigate",
+    "Sec-Fetch-Site":            "none",
+    "Upgrade-Insecure-Requests": "1",
+})
 
 BASE = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend"
 PARTICIPANTES_URL = BASE + "/eleccion-presidencial/participantes-ubicacion-geografica-nombre?tipoFiltro=ubigeo_nivel_03&idAmbitoGeografico={ambito}&ubigeoNivel1={dep}&ubigeoNivel2={prov}&ubigeoNivel3={dist}&idEleccion=10"

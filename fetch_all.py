@@ -1,8 +1,6 @@
 import json
 import time
-from fetch import format_data, reset_session
-
-reset_session()
+from fetch import format_data
 
 with open("hierarchy.json", "r", encoding="utf-8") as f:
     output = json.load(f)
