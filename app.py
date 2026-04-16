@@ -232,7 +232,6 @@ def _load_geo_data() -> tuple[dict, dict, dict, dict]:
             pairs = [
                 (d["nombre"], str(d["ubigeo"]))
                 for d in prov.get("distritos", [])
-                if str(d["ubigeo"]) in bundle
             ]
             if pairs:
                 _hierarchy[dept_name][prov_name] = sorted(pairs, key=lambda x: x[0])
