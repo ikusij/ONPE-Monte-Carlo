@@ -1,4 +1,6 @@
 import json
+import os
+import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -9,6 +11,7 @@ from monte_carlo import (
     SimulationResult,
     monte_carlo_simulation,
     aggregate_province,
+    make_synthetic_result,
 )
 
 @st.cache_resource(show_spinner=False)
@@ -167,59 +170,13 @@ _run_simulation_cached = st.cache_data(show_spinner=False, max_entries=10, ttl=1
 
 
 
-def make_synthetic_result(province_agg: SimulationResult, total_votes: int) -> SimulationResult | None:
-    """Synthesise a district result from a province aggregate distribution."""
-    if total_votes <= 0 or province_agg is None:
-        return None
-
-    raw = province_agg.raw_finals          # (n_sim, n_cands) — already shares
-    names = province_agg.candidate_names
-    n_sim = province_agg.n_simulations
-    cl = province_agg.confidence_level
-
-    lo, hi = (1 - cl) / 2, 1 - (1 - cl) / 2
-    means  = raw.mean(axis=0)
-    stds   = raw.std(axis=0)
-    ci_lo  = np.quantile(raw, lo, axis=0)
-    ci_hi  = np.quantile(raw, hi, axis=0)
-    win_probs = np.bincount(np.argmax(raw, axis=1), minlength=len(names)) / n_sim
-
-    candidates = sorted([
-        CandidateResult(
-            name=names[i],
-            votes_counted=0,
-            current_share=0.0,
-            projected_share=float(means[i]),
-            ci_low=float(ci_lo[i]),
-            ci_high=float(ci_hi[i]),
-            win_probability=float(win_probs[i]),
-            std=float(stds[i]),
-        )
-        for i in range(len(names))
-    ], key=lambda c: c.projected_share, reverse=True)
-
-    return SimulationResult(
-        candidates=candidates,
-        projected_winner=candidates[0],
-        votes_counted=0,
-        votes_remaining=total_votes,
-        total_votes=total_votes,
-        pct_counted=0.0,
-        n_simulations=n_sim,
-        prior_used=province_agg.prior_used,
-        confidence_level=cl,
-        raw_finals=raw,
-        candidate_names=names,
-    )
-
-
 st.set_page_config(page_title="ONPE Probabilidad de Victoria", layout="wide")
 st.title("ONPE — Probabilidad de Victoria Electoral")
 
 @st.cache_resource(show_spinner=False)
 def _load_null_votes_data() -> pd.DataFrame:
     """Pre-compute null vote stats for every district, joined with geo names."""
-    with open("output.json", "r", encoding="utf-8") as f:
+    with open("hierarchy.json", "r", encoding="utf-8") as f:
         _output = json.load(f)
 
     ubigeo_to_geo: dict[str, dict] = {}
@@ -260,7 +217,7 @@ def _load_null_votes_data() -> pd.DataFrame:
 
 @st.cache_resource(show_spinner=False)
 def _load_geo_data() -> tuple[dict, dict, dict, dict]:
-    with open("output.json", "r", encoding="utf-8") as f:
+    with open("hierarchy.json", "r", encoding="utf-8") as f:
         _output = json.load(f)
 
     _ubigeo_names: dict[str, str] = {}
@@ -291,7 +248,7 @@ null_votes_df = _load_null_votes_data()
 
 TODOS = "— Todos —"
 
-active_tab = st.sidebar.radio("Vista", ["Simulación Monte Carlo", "Votos Nulos"], label_visibility="collapsed")
+active_tab = st.sidebar.radio("Vista", ["Simulación Monte Carlo", "Votos Nulos", "Serie de Tiempo"], label_visibility="collapsed")
 st.sidebar.markdown("---")
 
 if active_tab == "Simulación Monte Carlo":
@@ -336,7 +293,7 @@ if active_tab == "Simulación Monte Carlo":
             dist_ubigeo = next((uid for name, uid in pairs if name == dist_sel), None)
 
     if st.button("Ejecutar simulación", key="run_sim"):
-        # Collect ubigeo IDs based on selection level — all from output.json directly
+        # Collect ubigeo IDs based on selection level — all from hierarchy.json directly
         if dist_sel != TODOS and dist_ubigeo:
             ids = [dist_ubigeo]
         elif prov_sel != TODOS:
@@ -532,3 +489,97 @@ if active_tab == "Votos Nulos":
         use_container_width=True,
         hide_index=True,
     )
+
+
+# ── Vista: Serie de Tiempo ───────────────────────────────────────────────────
+if active_tab == "Serie de Tiempo":
+    TIMESERIES_FILE = "timeseries.csv"
+
+    if not os.path.exists(TIMESERIES_FILE):
+        st.info("No hay datos de serie de tiempo todavía. Ejecuta `run_simulation.py --date '...'` para generar snapshots.")
+        st.stop()
+
+    ts_df = pd.read_csv(TIMESERIES_FILE, parse_dates=["timestamp"])
+
+    all_candidates = sorted(ts_df["candidate"].unique())
+    selected = st.multiselect(
+        "Candidatos",
+        options=all_candidates,
+        default=[c for c in all_candidates if any(k in c for k in ("FUJIMORI", "SANCHEZ", "LÓPEZ ALIAGA", "LOPEZ ALIAGA"))],
+    )
+
+    filtered_ts = ts_df[ts_df["candidate"].isin(selected)] if selected else ts_df
+
+    def ts_line_chart(data, y_field, y_title):
+        brush = alt.selection_interval(encodings=["x"])
+
+        base = alt.Chart(data).encode(
+            color=alt.Color("candidate:N", title="Candidato"),
+        )
+
+        detail = (
+            base.transform_filter(brush)
+            .mark_line(point=True)
+            .encode(
+                x=alt.X("timestamp:T", title="Fecha/Hora", axis=alt.Axis(format="%d/%m %H:%M")),
+                y=alt.Y(f"{y_field}:Q", title=y_title, scale=alt.Scale(zero=False)),
+                tooltip=[
+                    alt.Tooltip("timestamp:T", title="Fecha/Hora", format="%Y-%m-%d %H:%M"),
+                    alt.Tooltip("candidate:N", title="Candidato"),
+                    alt.Tooltip(f"{y_field}:Q", title=y_title, format=","),
+                ],
+            )
+            .properties(height=300)
+        )
+
+        overview = (
+            base.mark_line()
+            .encode(
+                x=alt.X("timestamp:T", title="", axis=alt.Axis(format="%d/%m %H:%M")),
+                y=alt.Y(f"{y_field}:Q", title="", axis=None),
+            )
+            .properties(height=60)
+            .add_params(brush)
+        )
+
+        return detail & overview
+
+    st.subheader("Votos proyectados a lo largo del tiempo")
+    st.altair_chart(ts_line_chart(filtered_ts, "projected_votes", "Votos proyectados"), use_container_width=True)
+
+    st.subheader("Votos contabilizados a lo largo del tiempo")
+    st.altair_chart(ts_line_chart(filtered_ts, "votes_counted", "Votos contabilizados"), use_container_width=True)
+
+    st.subheader("% de votos evaluados a lo largo del tiempo")
+    pct_df = ts_df.drop_duplicates("timestamp")[["timestamp", "pct_counted"]].copy()
+    pct_df["pct_counted"] = pct_df["pct_counted"] * 100
+    pct_brush = alt.selection_interval(encodings=["x"])
+    pct_detail = (
+        alt.Chart(pct_df).transform_filter(pct_brush).mark_line(point=True)
+        .encode(
+            x=alt.X("timestamp:T", title="Fecha/Hora", axis=alt.Axis(format="%d/%m %H:%M")),
+            y=alt.Y("pct_counted:Q", title="% contabilizado", scale=alt.Scale(zero=False)),
+            tooltip=[
+                alt.Tooltip("timestamp:T", title="Fecha/Hora", format="%Y-%m-%d %H:%M"),
+                alt.Tooltip("pct_counted:Q", title="% contabilizado", format=".2f"),
+            ],
+        )
+        .properties(height=300)
+    )
+    pct_overview = (
+        alt.Chart(pct_df).mark_line()
+        .encode(
+            x=alt.X("timestamp:T", title="", axis=alt.Axis(format="%d/%m %H:%M")),
+            y=alt.Y("pct_counted:Q", title="", axis=None),
+        )
+        .properties(height=60)
+        .add_params(pct_brush)
+    )
+    st.altair_chart(pct_detail & pct_overview, use_container_width=True)
+
+    with st.expander("Datos crudos"):
+        st.dataframe(
+            ts_df.sort_values(["timestamp", "candidate"]),
+            use_container_width=True,
+            hide_index=True,
+        )

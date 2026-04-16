@@ -76,11 +76,11 @@ def get_initial_list():
             distritos_data.append(distrito_info)
         return distritos_data
 
-    with open("output.json", "w", encoding="utf-8") as f:
+    with open("hierarchy.json", "w", encoding="utf-8") as f:
         json.dump(load_departamentos(), f, ensure_ascii=False, indent=2)
 
 def write_zone_dict():
-    with open("output.json", "r", encoding="utf-8") as f:
+    with open("hierarchy.json", "r", encoding="utf-8") as f:
         data = json.load(f)
 
     zone_dict = {}

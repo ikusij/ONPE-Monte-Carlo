@@ -11,7 +11,7 @@ if args.proxy:
     set_proxy(args.proxy)
     print(f"Using proxy: {args.proxy}")
 
-with open("output.json", "r", encoding="utf-8") as f:
+with open("hierarchy.json", "r", encoding="utf-8") as f:
     output = json.load(f)
 
 all_ubigeos = list(dict.fromkeys(

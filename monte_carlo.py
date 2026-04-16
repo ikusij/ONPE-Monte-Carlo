@@ -223,4 +223,49 @@ def aggregate_province(district_results: list[SimulationResult]) -> SimulationRe
         raw_finals=province_finals,
         candidate_names=all_names,
     )
- 
+
+
+def make_synthetic_result(province_agg: SimulationResult, total_votes: int) -> SimulationResult | None:
+    """Synthesise a district result from a province aggregate distribution."""
+    if total_votes <= 0 or province_agg is None:
+        return None
+
+    raw = province_agg.raw_finals          # (n_sim, n_cands) — already shares
+    names = province_agg.candidate_names
+    n_sim = province_agg.n_simulations
+    cl = province_agg.confidence_level
+
+    lo, hi = (1 - cl) / 2, 1 - (1 - cl) / 2
+    means  = raw.mean(axis=0)
+    stds   = raw.std(axis=0)
+    ci_lo  = np.quantile(raw, lo, axis=0)
+    ci_hi  = np.quantile(raw, hi, axis=0)
+    win_probs = np.bincount(np.argmax(raw, axis=1), minlength=len(names)) / n_sim
+
+    candidates = sorted([
+        CandidateResult(
+            name=names[i],
+            votes_counted=0,
+            current_share=0.0,
+            projected_share=float(means[i]),
+            ci_low=float(ci_lo[i]),
+            ci_high=float(ci_hi[i]),
+            win_probability=float(win_probs[i]),
+            std=float(stds[i]),
+        )
+        for i in range(len(names))
+    ], key=lambda c: c.projected_share, reverse=True)
+
+    return SimulationResult(
+        candidates=candidates,
+        projected_winner=candidates[0],
+        votes_counted=0,
+        votes_remaining=total_votes,
+        total_votes=total_votes,
+        pct_counted=0.0,
+        n_simulations=n_sim,
+        prior_used=province_agg.prior_used,
+        confidence_level=cl,
+        raw_finals=raw,
+        candidate_names=names,
+    )
