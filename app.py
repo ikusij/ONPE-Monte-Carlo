@@ -260,7 +260,7 @@ if active_tab == "Simulación Monte Carlo":
         min_value=150, max_value=300, value=220, step=1,
         help="Número estimado de votos por acta electoral. Se usa para calcular los votos pendientes en distritos sin datos (votos estimados = actas pendientes × este valor).",
     )
-else:
+elif active_tab == "Votos Nulos":
     nulos_threshold = st.sidebar.slider(
         "Umbral % votos nulos",
         min_value=0.0, max_value=20.0, value=5.0, step=0.5,
