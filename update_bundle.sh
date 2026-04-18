@@ -16,8 +16,8 @@ echo "Adding timeseries..."
 python3 run_simulation.py --date "$(date '+%Y-%m-%d %H:%M')"
 
 echo "Committing and pushing bundle.json..."
-# git add .
-# git commit -m "update bundle $(date '+%Y-%m-%d %H:%M')"
-# git push
+git add .
+git commit -m "update bundle $(date '+%Y-%m-%d %H:%M')"
+git push
 
 echo "Done."
